@@ -1,0 +1,29 @@
+Kernel command line: -q run alarm-simultaneous
+0 ~ 9fc00 1
+100000 ~ 13e0000 1
+Pintos booting with: 
+	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
+	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
+Calibrating timer...  110,796,800 loops/s.
+Boot complete.
+Executing 'alarm-simultaneous':
+(alarm-simultaneous) begin
+(alarm-simultaneous) Creating 3 threads to sleep 5 times each.
+(alarm-simultaneous) Each thread sleeps 10 ticks each time.
+(alarm-simultaneous) Within an iteration, all threads should wake up on the same tick.
+Interrupt 0x0e (#PF Page-Fault Exception) at rip=80042137f7
+ cr2=0000001f04000ed8 error=               2
+rax 0000001f04000ed0 rbx 0000000000204400 rcx 0000000000000006 rdx 0000008004000028
+rsp 0000008004000e50 rbp 0000008004000e60 rsi 0000008004000028 rdi 0000008004000eb0
+rip 00000080042137f7 r8 0000008004000dd8  r9 0000008004210647 r10 0000000000000000
+r11 0000000000000000 r12 0000000000000000 r13 0000000000000000 r14 0000000000000000
+r15 0000000000000000 rflags 00200206
+es: 0010 ds: 0010 cs: 0008 ss: 0010
+Kernel PANIC at ../../threads/interrupt.c:361 in intr_handler(): Unexpected interrupt
+Call stack: 0x8004213243 0x8004208832 0x8004208be4 0x8004213a34 0x800420cf26 0x80042170e0 0x8004216ecc 0x800421667f 0x8004206636 0x8004206783 0x8004206120.
+The `backtrace' program can make call stacks useful.
+Read "Backtraces" in the "Debugging Tools" chapter
+of the Pintos documentation for more information.
+Timer: 27 ticks
+Thread: 0 idle ticks, 27 kernel ticks, 0 user ticks
+Console: 1

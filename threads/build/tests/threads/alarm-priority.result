@@ -1,0 +1,9 @@
+FAIL
+Kernel panic in run: PANIC at ../../threads/thread.c:231 in thread_block(): assertion `intr_get_level() == INTR_OFF' failed.
+Call stack: 0x8004213243 0x8004206ce4 0x800420cf32 0x8004234028 0x80042071a0
+Translation of call stack:
+0x0000008004213243: debug_panic (lib/kernel/debug.c:32)
+0x0000008004206ce4: thread_block (threads/thread.c:232)
+0x000000800420cf32: timer_sleep (devices/timer.c:119)
+0x0000008004234028: (unknown)
+0x00000080042071a0: kernel_thread (threads/thread.c:408)
