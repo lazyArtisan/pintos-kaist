@@ -108,7 +108,7 @@ void timer_sleep(int64_t ticks)
 	// 	thread_yield();					 // 현재 실행중인 프로세스를 waiting list 끝으로 보낸다
 
 	// tid_t tid = thread_tid();
-	struct list sleeping_list;
+	extern struct list sleeping_list;
 	struct thread *sleeping_thread = thread_current();
 
 	// struct wait_block wb = {tid, timer_ticks() + ticks}; // 드르렁 하기 전에 정보 적어놓기
