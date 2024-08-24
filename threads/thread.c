@@ -41,14 +41,14 @@ static struct lock tid_lock;
 static struct list destruction_req;
 
 /* 잠자고 있는 쓰레드들 */
-static struct list sleeping_list;
+struct list sleeping_list;
 
-/* 명부에 적을 tid와 ticks를 위한 구조체 */
-static struct wait_block
-{
-	tid_t tid;	   // 쓰레드 식별자
-	int64_t ticks; // 시간 틱
-};
+// /* 명부에 적을 tid와 ticks를 위한 구조체 */
+// static struct wait_block
+// {
+// 	tid_t tid;	   // 쓰레드 식별자
+// 	int64_t ticks; // 시간 틱
+// };
 
 /* Statistics. */
 static long long idle_ticks;   /* # of timer ticks spent idle. */
@@ -118,6 +118,7 @@ void thread_init(void)
 	list_init(&ready_list);
 	list_init(&destruction_req);
 	list_init(&sleeping_list);
+	printf("List initialized. Is empty: %s\n", list_empty(&sleeping_list) ? "Yes" : "No");
 
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread();
@@ -419,6 +420,7 @@ init_thread(struct thread *t, const char *name, int priority)
 
 	memset(t, 0, sizeof *t);
 	t->status = THREAD_BLOCKED;
+	t->sleep_ticks = 0;
 	strlcpy(t->name, name, sizeof t->name);
 	t->tf.rsp = (uint64_t)t + PGSIZE - sizeof(void *);
 	t->priority = priority;
@@ -553,32 +555,21 @@ do_schedule(int status)
 	}
 
 	// 드르렁 중인 친구들 수면 시간 체크하고 깨어날 시간이면 깨운다
-	struct list_elem *listE = list_head(&sleeping_list);
-	while (listE != list_tail(&sleeping_list))
+	struct list_elem *listE = list_begin(&sleeping_list);
+	while (listE != list_end(&sleeping_list))
 	{
 		struct thread *sleeping_thread = list_entry(listE, struct thread, elem);
 
-		if (sleeping_thread->sleep_ticks > timer_ticks())
+		if (sleeping_thread->sleep_ticks > timer_ticks()) // 깨어날 시간이 되었을 때
 		{
+			listE = list_remove(listE);		 // 현재 요소를 제거하고 다음 요소로 이동
 			thread_unblock(sleeping_thread); // 프로세스 깨운다
-			listE = listE->next;			 // 드르렁 리스트에서 다음 거 탐색할 준비 하고
-			list_remove(listE->prev);		 // 이전 건 지워버린다
-			continue;						 // 다음으로 넘어간다
 		}
-
-		listE = listE->next;
+		else
+		{
+			listE = list_next(listE); // 다음 요소로 이동
+		}
 	}
-
-	// for (listE = list_head(&sleeping_list); listE == list_tail(&sleeping_list); listE = list_next(listE))
-	// {
-	// 	struct thread *sleeping_thread = list_entry(listE, struct thread, elem);
-
-	// 	if (sleeping_thread->sleep_ticks > timer_ticks())
-	// 	{
-	// 		list_remove(listE);				 // 드르렁 리스트에서 빼고
-	// 		thread_unblock(sleeping_thread); // 프로세스 깨운다
-	// 	}
-	// }
 	thread_current()->status = status;
 	schedule();
 }

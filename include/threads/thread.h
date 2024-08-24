@@ -18,8 +18,6 @@ enum thread_status
 	THREAD_DYING	/* About to be destroyed. */
 };
 
-static struct list sleeping_list; // 드르렁 리스트
-
 /* Thread identifier type.
    You can redefine this to whatever type you like. */
 typedef int tid_t;
@@ -129,6 +127,8 @@ tid_t thread_create(const char *name, int priority, thread_func *, void *);
 
 void thread_block(void);
 void thread_unblock(struct thread *);
+
+extern struct list sleeping_list; // 드르렁 리스트
 
 struct thread *thread_current(void);
 tid_t thread_tid(void);

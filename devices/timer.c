@@ -7,6 +7,7 @@
 #include "threads/io.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
+#include <list.h>
 
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -110,12 +111,40 @@ void timer_sleep(int64_t ticks)
 	// tid_t tid = thread_tid();
 	extern struct list sleeping_list;
 	struct thread *sleeping_thread = thread_current();
+	// printf("Sleeping thread elem: %p\n", &(sleeping_thread->elem));
 
-	// struct wait_block wb = {tid, timer_ticks() + ticks}; // 드르렁 하기 전에 정보 적어놓기
 	sleeping_thread->sleep_ticks = timer_ticks() + ticks;
 
+	// printf("List head: %p, tail: %p\n", sleeping_list.head, sleeping_list.tail);
+
+	// if (list_empty(&sleeping_list))
+	// {
+	// 	printf("sleeping_list is empty\n");
+	// }
+	// else
+	// {
+	// 	printf("sleeping_list is not empty\n");
+	// }
+
+	// struct list_elem *e = list_begin(&sleeping_list);
+	// if (e == NULL)
+	// {
+	// 	printf("Error: list_begin returned NULL\n");
+	// }
+	// else
+	// {
+	// 	printf("List element at %p\n", e);
+	// }
+
+	// for (e = list_begin(&sleeping_list); e != list_end(&sleeping_list); e = list_next(e))
+	// {
+	// 	printf("List element at %p\n", e);
+	// }
+
 	list_push_back(&sleeping_list, &(sleeping_thread->elem)); // 명부에 정보 전달
-	thread_block();											  // 드르렁. 명부에서 자기 이름 나오면 딱 1번 깨서 마저 실행.
+	enum intr_level old_level = intr_disable();
+	thread_block(); // 드르렁. 명부에서 자기 이름 나오면 딱 1번 깨서 마저 실행.
+	intr_set_level(old_level);
 }
 
 /* Suspends execution for approximately MS milliseconds. */
