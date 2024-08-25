@@ -115,32 +115,6 @@ void timer_sleep(int64_t ticks)
 
 	sleeping_thread->sleep_ticks = timer_ticks() + ticks;
 
-	// printf("List head: %p, tail: %p\n", sleeping_list.head, sleeping_list.tail);
-
-	// if (list_empty(&sleeping_list))
-	// {
-	// 	printf("sleeping_list is empty\n");
-	// }
-	// else
-	// {
-	// 	printf("sleeping_list is not empty\n");
-	// }
-
-	// struct list_elem *e = list_begin(&sleeping_list);
-	// if (e == NULL)
-	// {
-	// 	printf("Error: list_begin returned NULL\n");
-	// }
-	// else
-	// {
-	// 	printf("List element at %p\n", e);
-	// }
-
-	// for (e = list_begin(&sleeping_list); e != list_end(&sleeping_list); e = list_next(e))
-	// {
-	// 	printf("List element at %p\n", e);
-	// }
-
 	list_push_back(&sleeping_list, &(sleeping_thread->elem)); // 명부에 정보 전달
 	enum intr_level old_level = intr_disable();
 	thread_block(); // 드르렁. 명부에서 자기 이름 나오면 딱 1번 깨서 마저 실행.
@@ -177,6 +151,26 @@ timer_interrupt(struct intr_frame *args UNUSED)
 {
 	ticks++;
 	thread_tick();
+
+	// 드르렁 중인 친구들 수면 시간 체크하고 깨어날 시간이면 깨운다
+	struct list_elem *listE = list_begin(&sleeping_list);
+	while (listE != list_end(&sleeping_list))
+	{
+		struct thread *sleeping_thread = list_entry(listE, struct thread, elem);
+
+		// printf("Current timer_ticks: %lld\n", timer_ticks());
+		if (sleeping_thread->sleep_ticks <= timer_ticks()) // 깨어날 시간이 되었을 때
+		{
+			listE = list_remove(listE);		 // 현재 요소를 제거하고 다음 요소로 이동
+			thread_unblock(sleeping_thread); // 프로세스 깨운다
+											 // printf("Thread %d, sleep_ticks: %lld, current_ticks: %lld\n",
+											 // 	   sleeping_thread->tid, sleeping_thread->sleep_ticks, timer_ticks());
+		}
+		else
+		{
+			listE = list_next(listE); // 다음 요소로 이동
+		}
+	}
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

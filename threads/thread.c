@@ -43,13 +43,6 @@ static struct list destruction_req;
 /* 잠자고 있는 쓰레드들 */
 struct list sleeping_list;
 
-// /* 명부에 적을 tid와 ticks를 위한 구조체 */
-// static struct wait_block
-// {
-// 	tid_t tid;	   // 쓰레드 식별자
-// 	int64_t ticks; // 시간 틱
-// };
-
 /* Statistics. */
 static long long idle_ticks;   /* # of timer ticks spent idle. */
 static long long kernel_ticks; /* # of timer ticks in kernel threads. */
@@ -554,22 +547,6 @@ do_schedule(int status)
 		palloc_free_page(victim);
 	}
 
-	// 드르렁 중인 친구들 수면 시간 체크하고 깨어날 시간이면 깨운다
-	struct list_elem *listE = list_begin(&sleeping_list);
-	while (listE != list_end(&sleeping_list))
-	{
-		struct thread *sleeping_thread = list_entry(listE, struct thread, elem);
-
-		if (sleeping_thread->sleep_ticks > timer_ticks()) // 깨어날 시간이 되었을 때
-		{
-			listE = list_remove(listE);		 // 현재 요소를 제거하고 다음 요소로 이동
-			thread_unblock(sleeping_thread); // 프로세스 깨운다
-		}
-		else
-		{
-			listE = list_next(listE); // 다음 요소로 이동
-		}
-	}
 	thread_current()->status = status;
 	schedule();
 }
