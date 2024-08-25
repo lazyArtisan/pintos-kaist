@@ -30,14 +30,6 @@ static bool too_many_loops(unsigned loops);
 static void busy_wait(int64_t loops);
 static void real_time_sleep(int64_t num, int32_t denom);
 
-// /* 명부에 적을 tid와 ticks를 위한 구조체 */
-// static struct wait_block
-// {
-// 	struct list_elem elem; // 리스트에 넣기 위한 원소
-// 	tid_t tid;			   // 쓰레드 식별자
-// 	int64_t ticks;		   // 시간 틱
-// };
-
 /* Sets up the 8254 Programmable Interval Timer (PIT) to
    interrupt PIT_FREQ times per second, and registers the
    corresponding interrupt. */
@@ -102,16 +94,8 @@ timer_elapsed(int64_t then)
 /* Suspends execution for approximately TICKS timer ticks. */
 void timer_sleep(int64_t ticks)
 {
-	// int64_t start = timer_ticks(); // OS 시작하고 시간이 얼마나 지났는지
-
-	// ASSERT(intr_get_level() == INTR_ON);
-	// while (timer_elapsed(start) < ticks) // 처음 시작부터 지금까지 지난 시간이 ticks 이하이면
-	// 	thread_yield();					 // 현재 실행중인 프로세스를 waiting list 끝으로 보낸다
-
-	// tid_t tid = thread_tid();
 	extern struct list sleeping_list;
 	struct thread *sleeping_thread = thread_current();
-	// printf("Sleeping thread elem: %p\n", &(sleeping_thread->elem));
 
 	sleeping_thread->sleep_ticks = timer_ticks() + ticks;
 
@@ -163,8 +147,6 @@ timer_interrupt(struct intr_frame *args UNUSED)
 		{
 			listE = list_remove(listE);		 // 현재 요소를 제거하고 다음 요소로 이동
 			thread_unblock(sleeping_thread); // 프로세스 깨운다
-											 // printf("Thread %d, sleep_ticks: %lld, current_ticks: %lld\n",
-											 // 	   sleeping_thread->tid, sleeping_thread->sleep_ticks, timer_ticks());
 		}
 		else
 		{
