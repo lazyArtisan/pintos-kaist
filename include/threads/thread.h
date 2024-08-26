@@ -129,6 +129,7 @@ void thread_block(void);
 void thread_unblock(struct thread *);
 
 extern struct list sleeping_list; // 드르렁 리스트
+extern struct list ready_list;	  // 쓰레드 대기 리스트
 
 struct thread *thread_current(void);
 tid_t thread_tid(void);
