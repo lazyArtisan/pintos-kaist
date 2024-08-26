@@ -307,7 +307,7 @@ bool for_descending_priority(const struct list_elem *a, const struct list_elem *
 {
 	int ap = list_entry(a, struct thread, elem)->priority;
 	int bp = list_entry(b, struct thread, elem)->priority;
-	return ap < bp;
+	return ap > bp;
 }
 
 /* Yields the CPU.  The current thread is not put to sleep and
@@ -321,8 +321,8 @@ void thread_yield(void)
 
 	old_level = intr_disable();
 	if (curr != idle_thread)
-		list_push_back(&ready_list, &curr->elem);
-	// list_insert_ordered(&ready_list, &curr->elem, &for_descending_priority, NULL); // 효율을 위해 변경
+		list_insert_ordered(&ready_list, &curr->elem, &for_descending_priority, NULL);
+
 	do_schedule(THREAD_READY);
 	intr_set_level(old_level);
 }
@@ -345,10 +345,6 @@ void reschedule_by_priority(void)
 	{
 		// list_remove(maxE); // 대기 리스트에서 제거하고
 		thread_yield(); // 현재 쓰레드 꺼버리기 (thread_yield도 수정함)
-		if (intr_context())
-			intr_yield_on_return();
-		else
-			thread_yield();
 	}
 }
 
