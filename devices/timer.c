@@ -154,23 +154,23 @@ timer_interrupt(struct intr_frame *args UNUSED)
 		}
 	}
 
-	// 기다리고 있는 친구들 중에 우선순위 높은 친구 있으면 그 친구 먼저 실행
-	struct list_elem *listP = list_begin(&ready_list);
-	while (listP != list_end(&ready_list))
-	{
-		struct thread *ready_thread = list_entry(listP, struct thread, elem);
+	// // 기다리고 있는 친구들 중에 우선순위 높은 친구 있으면 그 친구 먼저 실행
+	// struct list_elem *listP = list_begin(&ready_list);
+	// while (listP != list_end(&ready_list))
+	// {
+	// 	struct thread *ready_thread = list_entry(listP, struct thread, elem);
 
-		if (ready_thread->priority > thread_current()->priority) // 현재 실행중인 쓰레드의 우선순위가 자신보다 낮다면
-		{
-			listP = list_remove(listP);						   // 대기 리스트에서 현재 요소를 제거하고 다음 요소로 이동
-			list_push_front(&ready_list, &ready_thread->elem); // 대기 리스트 맨 앞에 우선순위가 높은 쓰레드를 놓고
-			intr_yield_on_return();							   // 현재 쓰레드를 대기 리스트 맨 뒤로 보낸다
-		}
-		else
-		{
-			listP = list_next(listE); // 다음 요소로 이동
-		}
-	}
+	// 	if (ready_thread->priority > thread_current()->priority) // 현재 실행중인 쓰레드의 우선순위가 자신보다 낮다면
+	// 	{
+	// 		listP = list_remove(listP);						   // 대기 리스트에서 현재 요소를 제거하고 다음 요소로 이동
+	// 		list_push_front(&ready_list, &ready_thread->elem); // 대기 리스트 맨 앞에 우선순위가 높은 쓰레드를 놓고
+	// 		intr_yield_on_return();							   // 현재 쓰레드를 대기 리스트 맨 뒤로 보낸다
+	// 	}
+	// 	else
+	// 	{
+	// 		listP = list_next(listP); // 다음 요소로 이동
+	// 	}
+	// }
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

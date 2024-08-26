@@ -13,7 +13,7 @@ Acceptable output:
   (priority-preempt) end
 Differences in `diff -u' format:
   (priority-preempt) begin
-- (priority-preempt) Thread high-priority iteration 0
+  (priority-preempt) Thread high-priority iteration 0
 - (priority-preempt) Thread high-priority iteration 1
 - (priority-preempt) Thread high-priority iteration 2
 - (priority-preempt) Thread high-priority iteration 3

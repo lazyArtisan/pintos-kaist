@@ -1,11 +1,9 @@
 FAIL
-Kernel panic in run: PANIC at ../../lib/kernel/list.c:78 in list_next(): assertion `is_head (elem) || is_interior (elem)' failed.
-Call stack: 0x8004213334 0x80042135b0 0x800420d0d9 0x8004208720 0x8004208b3e 0x8004217502 0x80042071a3
+Kernel panic in run: PANIC at ../../tests/threads/tests.c:59 in run_test(): no test named "alarm-priority"
+Call stack: 0x8004213362 0x8004216810 0x8004206636 0x8004206783 0x8004206120
 Translation of call stack:
-0x0000008004213334: debug_panic (lib/kernel/debug.c:32)
-0x00000080042135b0: list_next (lib/kernel/list.c:79)
-0x000000800420d0d9: timer_interrupt (devices/timer.c:171)
-0x0000008004208720: intr_handler (threads/interrupt.c:352)
-0x0000008004208b3e: intr_entry (threads/intr-stubs.o:?)
-0x0000008004217502: alarm_priority_thread (tests/threads/alarm-priority.c:46)
-0x00000080042071a3: kernel_thread (threads/thread.c:401)
+0x0000008004213362: debug_panic (lib/kernel/debug.c:32)
+0x0000008004216810: run_test (tests/threads/tests.c:60)
+0x0000008004206636: run_task (threads/init.c:252)
+0x0000008004206783: run_actions (threads/init.c:297)
+0x0000008004206120: main (threads/init.c:125)

@@ -1,2 +1,2 @@
 FAIL
-Run didn't shut down properly: no "Timer: # ticks" message
+Iteration 1 differs from iteration 0
