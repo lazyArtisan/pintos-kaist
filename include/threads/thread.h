@@ -129,6 +129,8 @@ tid_t thread_create(const char *name, int priority, thread_func *, void *);
 void thread_block(void);
 void thread_unblock(struct thread *);
 
+void reschedule_by_priority(void); // 우선순위에 따라 대기 리스트 정렬 및 preemption
+
 extern struct list sleeping_list; // 드르렁 리스트
 extern struct list ready_list;	  // 쓰레드 대기 리스트
 

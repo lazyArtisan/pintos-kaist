@@ -66,6 +66,8 @@ static void do_schedule(int status);
 static void schedule(void);
 static tid_t allocate_tid(void);
 
+void reschedule_by_priority(void); // 우선순위에 따라 대기 리스트 정렬 및 preemption
+
 /* Returns true if T appears to point to a valid thread. */
 #define is_thread(t) ((t) != NULL && (t)->magic == THREAD_MAGIC)
 
@@ -79,7 +81,9 @@ static tid_t allocate_tid(void);
 // Global descriptor table for the thread_start.
 // Because the gdt will be setup after the thread_init, we should
 // setup temporal gdt first.
-static uint64_t gdt[3] = {0, 0x00af9a000000ffff, 0x00cf92000000ffff};
+static uint64_t gdt[3] = {0,
+						  0x00af9a000000ffff,
+						  0x00cf92000000ffff};
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -298,6 +302,14 @@ void thread_exit(void)
 	NOT_REACHED();
 }
 
+// 우선순위 내림차순으로 정렬하기 위한 함수
+bool for_descending_priority(const struct list_elem *a, const struct list_elem *b, void *aux)
+{
+	int ap = list_entry(a, struct thread, elem)->priority;
+	int bp = list_entry(b, struct thread, elem)->priority;
+	return ap < bp;
+}
+
 /* Yields the CPU.  The current thread is not put to sleep and
    may be scheduled again immediately at the scheduler's whim. */
 void thread_yield(void)
@@ -310,28 +322,33 @@ void thread_yield(void)
 	old_level = intr_disable();
 	if (curr != idle_thread)
 		list_push_back(&ready_list, &curr->elem);
+	// list_insert_ordered(&ready_list, &curr->elem, &for_descending_priority, NULL); // 효율을 위해 변경
 	do_schedule(THREAD_READY);
 	intr_set_level(old_level);
 }
 
 void reschedule_by_priority(void)
 {
-	// 기다리고 있는 친구들 중에 우선순위 높은 친구 있으면 그 친구 먼저 실행
-	struct list_elem *listP = list_begin(&ready_list);
-	while (listP != list_end(&ready_list))
-	{
-		struct thread *ready_thread = list_entry(listP, struct thread, elem);
+	// ready_list에서 기다리고 있는 친구들을 정렬한다
+	// 만약 ready_list 중에 최고 priority가 현재 thread의 priority보다 높다면 thread_yield를 한다.
+	// thread_yield에서 그냥 push_back하는게 아니라 list_insert_ordered를 한다
+	// 최적화하려면 직접 정렬도 구현하고 정렬 와중에 최댓값을 저장해놓으면 될듯
 
-		if (ready_thread->priority > thread_current()->priority) // 현재 실행중인 쓰레드의 우선순위가 자신보다 낮다면
-		{
-			listP = list_remove(listP);						   // 대기 리스트에서 현재 요소를 제거하고 다음 요소로 이동
-			list_push_front(&ready_list, &ready_thread->elem); // 대기 리스트 맨 앞에 우선순위가 높은 쓰레드를 놓고
-			thread_yield();									   // 현재 쓰레드를 대기 리스트 맨 뒤로 보낸다
-		}
+	list_sort(&ready_list, &for_descending_priority, NULL); // 정렬
+
+	struct list_elem *maxE = list_max(&ready_list, &for_descending_priority, NULL); // 최대 priority 가진 대기 리스트 원소
+	struct thread *maxE_thread = list_entry(maxE, struct thread, elem);				// 최대 priority 가진 쓰레드
+	int maxE_priority = maxE_thread->priority;										// 대기 리스트에서 최대 priority
+	// printf("maxE_priority : %d\n\n", maxE_priority);
+
+	if (thread_current()->priority < maxE_priority) // 대기 최대 priority가 현재 priority보다 크다면
+	{
+		// list_remove(maxE); // 대기 리스트에서 제거하고
+		thread_yield(); // 현재 쓰레드 꺼버리기 (thread_yield도 수정함)
+		if (intr_context())
+			intr_yield_on_return();
 		else
-		{
-			listP = list_next(listP); // 다음 요소로 이동
-		}
+			thread_yield();
 	}
 }
 
