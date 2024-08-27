@@ -68,7 +68,6 @@ void sema_down(struct semaphore *sema)
 
 	while (sema->value == 0)
 	{
-		// list_push_back (&sema->waiters, &thread_current ()->elem);
 		list_insert_ordered(&sema->waiters, &thread_current()->elem, &for_descending_priority, NULL);
 
 		// struct list_elem *e = list_begin(&sema->waiters);
@@ -130,14 +129,7 @@ void sema_up(struct semaphore *sema)
 	sema->value++;
 	intr_set_level(old_level);
 
-	if (!list_empty(&ready_list))
-	{
-		struct thread *FT = list_entry(list_front(&ready_list), struct thread, elem);
-		if (thread_current()->priority < FT->priority) // 대기 최대 priority가 현재 priority보다 크다면
-		{
-			thread_yield(); // 현재 쓰레드 꺼버리기
-		}
-	}
+	check_priority_and_yield();
 }
 
 static void sema_test_helper(void *sema_);

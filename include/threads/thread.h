@@ -129,7 +129,7 @@ tid_t thread_create(const char *name, int priority, thread_func *, void *);
 void thread_block(void);
 void thread_unblock(struct thread *);
 
-void reschedule_by_priority(void); // 우선순위에 따라 대기 리스트 정렬 및 preemption
+void check_priority_and_yield(void); // 현재 실행중인 쓰레드의 우선순위가 낮으면 yield
 bool for_descending_priority(const struct list_elem *a, const struct list_elem *b, void *aux);
 
 extern struct list sleeping_list; // 드르렁 리스트
