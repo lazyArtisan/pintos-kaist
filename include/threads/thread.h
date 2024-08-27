@@ -92,6 +92,7 @@ struct thread
 	int64_t sleep_ticks;	   // 드르렁 시간
 	enum thread_status status; /* Thread state. */
 	char name[16];			   /* Name (for debugging purposes). */
+	int old_priority;		   /* 기부받기 전 priority */
 	int priority;			   /* Priority. */
 	int birth_time;			   /* 태어난 시간 */
 
