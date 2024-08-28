@@ -95,6 +95,7 @@ struct thread
 	int old_priority;		   /* 기부받기 전 priority */
 	int priority;			   /* Priority. */
 	int birth_time;			   /* 태어난 시간 */
+	struct list lock_list;	   /* 자신이 갖고 있는 락들 */
 
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem; /* List element. */

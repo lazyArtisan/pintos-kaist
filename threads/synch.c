@@ -66,7 +66,7 @@ void sema_down(struct semaphore *sema)
 
 	old_level = intr_disable();
 
-	while (sema->value == 0)
+	while (sema->value <= 0)
 	{
 		list_insert_ordered(&sema->waiters, &thread_current()->elem, &for_descending_priority, NULL);
 
@@ -188,6 +188,7 @@ void lock_init(struct lock *lock)
 	ASSERT(lock != NULL);
 
 	lock->holder = NULL;
+	lock->priority_to_donate = -1;
 	sema_init(&lock->semaphore, 1);
 }
 
@@ -203,17 +204,24 @@ void lock_acquire(struct lock *lock)
 {
 	ASSERT(lock != NULL);
 	ASSERT(!intr_context());
-	ASSERT(!lock_held_by_current_thread(lock));
+	ASSERT(!lock_held_by_current_thread(lock)); // current_thread는 해당 락 아직 안 갖고 있음
 
-	if (lock->holder != NULL && lock->holder->priority < thread_current()->priority)
+	// 새로운 쓰레드 추가로 인해 락이 donation할 우선순위 갱신
+	if (lock->priority_to_donate < thread_current()->priority)
+		lock->priority_to_donate = thread_current()->priority;
+
+	/* !!! 이새끼가 문제 !!! */
+	/* 락 리스트에 이상한게 들어가서 터지는 것? */
+	// 락을 가진 쓰레드의 우선순위가 락 대기열의 최고 우선순위보다 낮다면 우선순위 기부
+	if (lock->holder != NULL && lock->holder->priority < lock->priority_to_donate)
 	{
-		if (lock->holder->old_priority == -1)					 // lock holder가 기부를 처음 받는 거라면
-			lock->holder->old_priority = lock->holder->priority; // 기부 받기 전 priority 저장
-
-		lock->holder->priority = thread_current()->priority;
+		if (lock->holder->old_priority == -1) // 기부를 처음 받는다면 old_priority에 저장
+			lock->holder->old_priority = lock->holder->priority;
+		lock->holder->priority = lock->priority_to_donate;
 	}
 
 	sema_down(&lock->semaphore);
+	list_push_front(&(thread_current()->lock_list), &lock->elem); // 해당 쓰레드의 락 리스트에 락을 넣어준다.
 	lock->holder = thread_current();
 }
 
@@ -247,8 +255,31 @@ void lock_release(struct lock *lock)
 	ASSERT(lock != NULL);
 	ASSERT(lock_held_by_current_thread(lock));
 
-	if (lock->holder->old_priority != -1) // 기부 받은 적이 있다면 기부 받기 전으로 우선순위 원상복구
-		lock->holder->priority = lock->holder->old_priority;
+	struct list *my_lock_list = &(lock->holder->lock_list); // 자신이 가진 lock들의 list
+
+	// 자신이 가진 lock들의 list에서 해당 lock을 지워버린다
+	list_remove(&lock->elem);
+
+	// 내려놓은 lock의 우선순위를 갱신해준다
+	if (lock->holder->old_priority != -1) // 우선순위를 기부받은 적이 있었다면
+	{
+		// 자신이 가진 락들을 다시 순회하여 최대 priority 얻기
+		int max_priority = lock->holder->old_priority;
+		struct list_elem *e;
+		for (e = list_begin(my_lock_list); e != list_end(my_lock_list); e = list_next(e))
+		{
+			int elem_priority = list_entry(e, struct lock, elem)->priority_to_donate;
+			// printf("elem_prirotiy : %d\n", elem_priority);
+			// if (e->next == NULL)
+			// 	printf("이 앞, 오류 있다\n");
+			max_priority = (elem_priority > max_priority) ? elem_priority : max_priority;
+		}
+		lock->holder->priority = max_priority;
+
+		// 만약 남은 락이 없었다면 기부 받을게 없으므로 old_priority를 -1로 바꿔주기
+		if (list_empty(my_lock_list))
+			lock->holder->old_priority = -1;
+	}
 
 	lock->holder = NULL;
 	sema_up(&lock->semaphore);

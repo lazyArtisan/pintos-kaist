@@ -43,6 +43,9 @@ static struct list destruction_req;
 /* 잠자고 있는 쓰레드들 */
 struct list sleeping_list;
 
+/* 자기가 갖고 있는 락들 */
+struct list lock_list;
+
 /* Statistics. */
 static long long idle_ticks;   /* # of timer ticks spent idle. */
 static long long kernel_ticks; /* # of timer ticks in kernel threads. */
@@ -116,6 +119,7 @@ void thread_init(void)
 	list_init(&ready_list);
 	list_init(&destruction_req);
 	list_init(&sleeping_list);
+	list_init(&lock_list);
 
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread();
@@ -321,7 +325,7 @@ void thread_yield(void)
 	intr_set_level(old_level);
 }
 
-// 우선순위 내림차순으로 정렬하기 위한 함수
+// 쓰레드를 우선순위 내림차순으로 정렬하기 위한 함수
 bool for_descending_priority(const struct list_elem *a, const struct list_elem *b, void *aux)
 {
 	int ap = list_entry(a, struct thread, elem)->priority;
@@ -449,6 +453,7 @@ init_thread(struct thread *t, const char *name, int priority)
 	t->priority = priority;
 	t->old_priority = -1;
 	t->magic = THREAD_MAGIC;
+	list_init(&(t->lock_list));
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
