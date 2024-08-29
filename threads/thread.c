@@ -452,6 +452,8 @@ init_thread(struct thread *t, const char *name, int priority)
 	t->tf.rsp = (uint64_t)t + PGSIZE - sizeof(void *);
 	t->priority = priority;
 	t->old_priority = -1;
+	t->im_waiting = 0;
+	t->waiting_lock = NULL;
 	t->magic = THREAD_MAGIC;
 	list_init(&(t->lock_list));
 }
