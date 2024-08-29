@@ -264,6 +264,28 @@ bool lock_try_acquire(struct lock *lock)
 	return success;
 }
 
+/* 어떤 쓰레드의 우선순위가 변경되었을 때 자신의 우선순위를 재점검하는 재귀함수 */
+void update_priority(int my_priority, struct thread *t)
+{
+	// 자신의 우선순위를 갱신하는 방법 : 현재 자신의 우선순위와 락 리스트를 쭉 훑고 얻은 최대 우선순위 중 최대값으로 갱신
+	// waiting lock의 우선순위를 갱신하는 방법 : 자신의 원래 우선순위와 락 리스트를 쭉 훑고 얻은 최대 우선순위 중 최대값으로 갱신
+	struct list *my_lock_list = &t->lock_list;
+	struct list_elem *e;
+	for (e = list_begin(my_lock_list); e != list_end(my_lock_list); e = list_next(e))
+	{
+		int elem_priority = list_entry(e, struct lock, elem)->priority_to_donate;
+		my_priority = (elem_priority > my_priority) ? elem_priority : my_priority;
+	}
+
+	if (my_priority == t->old_priority)
+		t->old_priority = -1;
+
+	t->priority = my_priority;
+
+	if (t->waiting_lock != NULL)
+		update_priority(t->waiting_lock->holder->old_priority, t->waiting_lock->holder);
+}
+
 /* Releases LOCK, which must be owned by the current thread.
    This is lock_release function.
 
@@ -277,11 +299,6 @@ void lock_release(struct lock *lock)
 
 	// 자신이 가진 lock들의 list에서 해당 lock을 지워버린다
 	list_remove(&lock->elem);
-
-	// release_update(lock);
-
-	// if (list_empty(&lock->holder->lock_list))
-	// 	lock->holder->old_priority = -1;
 
 	/* 내려놓은 lock의 우선순위를 갱신해준다 */
 	if (lock->holder->old_priority != -1) // 우선순위를 기부받은 적이 있었다면
@@ -298,18 +315,17 @@ void lock_release(struct lock *lock)
 				int elem_priority = list_entry(e, struct lock, elem)->priority_to_donate;
 				max_priority = (elem_priority > max_priority) ? elem_priority : max_priority;
 			}
-			lock_to_update->holder->priority = max_priority;
 
-			// 만약 남은 락이 없었다면 old_priority를 -1로 바꿔주기
-			if (list_empty(holders_lock_list))
+			// 만약 기부금이 부족했다면 old_priority를 -1로 바꿔주기
+			if (max_priority == lock_to_update->holder->old_priority)
 				lock_to_update->holder->old_priority = -1;
 
+			lock_to_update->holder->priority = max_priority;
+
+			// 다음 waiting_lock으로 이동
 			lock_to_update = lock_to_update->holder->waiting_lock;
 		}
 	}
-
-	if (list_empty(&lock->holder->lock_list))
-		lock->holder->old_priority = -1;
 
 	lock->holder = NULL;
 	sema_up(&lock->semaphore);

@@ -338,6 +338,7 @@ void check_priority_and_yield(void)
 {
 	if (!list_empty(&ready_list))
 	{
+		list_sort(&ready_list, for_descending_priority, NULL);								   // 혹시나 해서 넣었지만 효율에 안 좋음. 빼보기.
 		struct thread *maxE_thread = list_entry(list_front(&ready_list), struct thread, elem); // 최대 priority 가진 쓰레드
 		int maxE_priority = maxE_thread->priority;											   // 대기 리스트에서 최대 priority
 
@@ -350,6 +351,10 @@ void check_priority_and_yield(void)
 void thread_set_priority(int new_priority)
 {
 	thread_current()->priority = new_priority;
+	if (thread_current()->old_priority != -1)
+		thread_current()->old_priority = new_priority;
+	update_priority(new_priority, thread_current());
+
 	check_priority_and_yield();
 }
 
