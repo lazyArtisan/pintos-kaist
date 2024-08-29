@@ -206,18 +206,21 @@ void lock_acquire(struct lock *lock)
 	ASSERT(!intr_context());
 	ASSERT(!lock_held_by_current_thread(lock)); // current_thread는 해당 락 아직 안 갖고 있음
 
-	// 새로운 쓰레드 추가로 인해 락이 donation할 우선순위 갱신
+	/* 락에 자신의 우선순위를 제출하여 기부 우선순위를 갱신한다 */
+
 	if (lock->priority_to_donate < thread_current()->priority)
+	{
 		lock->priority_to_donate = thread_current()->priority;
 
-	/* !!! 이새끼가 문제 !!! */
-	/* 락 리스트에 이상한게 들어가서 터지는 것? */
-	// 락을 가진 쓰레드의 우선순위가 락 대기열의 최고 우선순위보다 낮다면 우선순위 기부
-	if (lock->holder != NULL && lock->holder->priority < lock->priority_to_donate)
-	{
-		if (lock->holder->old_priority == -1) // 기부를 처음 받는다면 old_priority에 저장
-			lock->holder->old_priority = lock->holder->priority;
-		lock->holder->priority = lock->priority_to_donate;
+		/* 락 홀더 우선순위를 갱신한다*/
+		if (lock->holder != NULL && lock->holder->priority < lock->priority_to_donate)
+		{
+			// 기부를 처음 받는다면 old_priority에 이전 우선순위를 저장한다
+			if (lock->holder->old_priority == -1)
+				lock->holder->old_priority = lock->holder->priority;
+
+			lock->holder->priority = lock->priority_to_donate;
+		}
 	}
 
 	sema_down(&lock->semaphore);
@@ -260,25 +263,36 @@ void lock_release(struct lock *lock)
 	// 자신이 가진 lock들의 list에서 해당 lock을 지워버린다
 	list_remove(&lock->elem);
 
-	// 내려놓은 lock의 우선순위를 갱신해준다
+	// lock을 내려놓은 후에 자신의 우선순위를 갱신한다
 	if (lock->holder->old_priority != -1) // 우선순위를 기부받은 적이 있었다면
 	{
-		// 자신이 가진 락들을 다시 순회하여 최대 priority 얻기
-		int max_priority = lock->holder->old_priority;
-		struct list_elem *e;
-		for (e = list_begin(my_lock_list); e != list_end(my_lock_list); e = list_next(e))
+		if (list_empty(my_lock_list)) // 내려놓는 락이 유일한 락이었다면
 		{
-			int elem_priority = list_entry(e, struct lock, elem)->priority_to_donate;
-			// printf("elem_prirotiy : %d\n", elem_priority);
-			// if (e->next == NULL)
-			// 	printf("이 앞, 오류 있다\n");
-			max_priority = (elem_priority > max_priority) ? elem_priority : max_priority;
-		}
-		lock->holder->priority = max_priority;
-
-		// 만약 남은 락이 없었다면 기부 받을게 없으므로 old_priority를 -1로 바꿔주기
-		if (list_empty(my_lock_list))
+			lock->holder->priority = lock->holder->old_priority; // 원래 우선순위로 되돌아가기
 			lock->holder->old_priority = -1;
+		}
+		else // 아직 락이 남아있다면
+		{
+			// 내가 가진 락들을 순회하면서 최대 기부 우선순위를 갱신하기
+			int max_priority = -1;
+			struct list_elem *e;
+			for (e = list_begin(my_lock_list); e != list_end(my_lock_list); e = list_next(e))
+			{
+				int elem_priority = list_entry(e, struct lock, elem)->priority_to_donate;
+				max_priority = (elem_priority > max_priority) ? elem_priority : max_priority;
+			}
+
+			// 최대 기부 우선순위가 쓰레드의 이전 우선순위보다 낮았다면
+			if (lock->holder->old_priority > lock->holder->priority)
+			{
+				lock->holder->priority = lock->holder->old_priority; // 원래 우선순위로 되돌아가기
+				lock->holder->old_priority = -1;
+			}
+			else // 최대 기부 우선순위가 쓰레드의 이전 우선순위보다 높다면
+			{
+				lock->holder->priority = max_priority;
+			}
+		}
 	}
 
 	lock->holder = NULL;
