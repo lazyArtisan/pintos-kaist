@@ -397,6 +397,25 @@ void cond_wait(struct condition *cond, struct lock *lock)
 	lock_acquire(lock);
 }
 
+/* 옆자리에서 베껴온 함수 */
+static bool sema_greater(const struct list_elem *a_,
+						 const struct list_elem *b_, void *aux UNUSED)
+{
+	const struct semaphore_elem *a = list_entry(a_, struct semaphore_elem, elem);
+	const struct semaphore_elem *b = list_entry(b_, struct semaphore_elem, elem);
+	return list_entry(list_front(&(a->semaphore.waiters)), struct thread, elem)->priority <
+		   list_entry(list_front(&(b->semaphore.waiters)), struct thread, elem)->priority;
+}
+
+// 쓰레드를 우선순위 내림차순으로 정렬하기 위한 함수
+bool cond_descending_priority(const struct list_elem *a, const struct list_elem *b, void *aux)
+{
+	int ap = list_entry(list_front(&list_entry(a, struct semaphore_elem, elem)->semaphore.waiters), struct thread, elem)->priority;
+	int bp = list_entry(list_front(&list_entry(b, struct semaphore_elem, elem)->semaphore.waiters), struct thread, elem)->priority;
+
+	return ap > bp; // 우선순위 내림차순으로 정렬
+}
+
 /* If any threads are waiting on COND (protected by LOCK), then
    this function signals one of them to wake up from its wait.
    LOCK must be held before calling this function.
@@ -412,9 +431,14 @@ void cond_signal(struct condition *cond, struct lock *lock UNUSED)
 	ASSERT(lock_held_by_current_thread(lock));
 
 	if (!list_empty(&cond->waiters))
-		sema_up(&list_entry(list_pop_front(&cond->waiters),
-							struct semaphore_elem, elem)
-					 ->semaphore);
+	{
+		// struct list_elem *max = list_max(&cond->waiters, cond_descending_priority, NULL);
+		// list_remove(max);
+		list_sort(&cond->waiters, cond_descending_priority, NULL);
+		// sema_up(&list_entry(max, struct semaphore_elem, elem)->semaphore);
+		// list_sort(&cond->waiters, for_descending_priority, NULL);
+		sema_up(&list_entry(list_pop_front(&cond->waiters), struct semaphore_elem, elem)->semaphore);
+	}
 }
 
 /* Wakes up all threads, if any, waiting on COND (protected by
