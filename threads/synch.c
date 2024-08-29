@@ -264,27 +264,6 @@ bool lock_try_acquire(struct lock *lock)
 	return success;
 }
 
-void release_update(struct lock *lock)
-{
-	if (lock->holder->old_priority != -1)
-	{
-		struct list *my_lock_list = &(lock->holder->lock_list); // 자신이 가진 lock들의 list
-
-		// 자신이 가진 락들을 다시 순회하여 최대 priority 얻기
-		int max_priority = lock->holder->old_priority;
-		struct list_elem *e;
-		for (e = list_begin(my_lock_list); e != list_end(my_lock_list); e = list_next(e))
-		{
-			int elem_priority = list_entry(e, struct lock, elem)->priority_to_donate;
-			max_priority = (elem_priority > max_priority) ? elem_priority : max_priority;
-		}
-
-		lock->holder->priority = max_priority;			// 최대 priority로 갱신시킨 뒤에
-		if (lock->holder->waiting_lock != NULL)			// 자신이 기다리고 있는 락이 있다면
-			release_update(lock->holder->waiting_lock); // 그 락 홀더의 우선순위도 업데이트
-	}
-}
-
 /* Releases LOCK, which must be owned by the current thread.
    This is lock_release function.
 
