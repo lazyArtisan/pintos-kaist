@@ -206,28 +206,8 @@ void lock_acquire(struct lock *lock)
 	ASSERT(!intr_context());
 	ASSERT(!lock_held_by_current_thread(lock)); // current_thread는 해당 락 아직 안 갖고 있음
 
-	thread_current()->im_waiting = 1;
 	thread_current()->waiting_lock = lock; // 해당 쓰레드가 기다리고 있는 락을 저장한다
 	int current_priority = thread_current()->priority;
-
-	// /* 되는 버전 - 락에 자신의 우선순위를 제출하여 기부 우선순위를 갱신한다 */
-	// // 락이 기부할 우선순위가 현재 쓰레드의 우선순위보다 낮다면
-	// if (lock->priority_to_donate < current_priority)
-	// {
-	// 	// 락 기부 우선순위를 갱신한다
-	// 	lock->priority_to_donate = current_priority;
-
-	// 	// 락 홀더의 우선순위가 현재 쓰레드의 우선순위보다 낮다면
-	// 	if (lock->holder != NULL && lock->holder->priority < lock->priority_to_donate)
-	// 	{
-	// 		// 기부를 처음 받는다면 old_priority에 이전 우선순위를 저장한다
-	// 		if (lock->holder->old_priority == -1)
-	// 			lock->holder->old_priority = lock->holder->priority;
-
-	// 		// 락 홀더 우선순위를 갱신한다
-	// 		lock->holder->priority = lock->priority_to_donate;
-	// 	}
-	// }
 
 	struct lock *lock_n = lock;
 	// 만약 lock holder가 있었다면 (= lock을 기다려야 한다면)
@@ -259,52 +239,9 @@ void lock_acquire(struct lock *lock)
 		break;
 	}
 
-	/* 안되는 버전 2 : 다다음 락에 닿지 못함 */
-	// struct lock *lock_to_update = lock;
-	// while ((lock->holder != NULL) && (lock->holder->im_waiting == 1))
-	// {
-	// 	if (lock_to_update->priority_to_donate < current_priority)
-	// 	{
-	// 		lock_to_update->priority_to_donate = current_priority;
-
-	// 		if (lock_to_update->holder->priority < lock_to_update->priority_to_donate)
-	// 		{
-	// 			if (lock_to_update->holder->old_priority == -1)
-	// 				lock_to_update->holder->old_priority = lock_to_update->holder->priority;
-
-	// 			lock_to_update->priority_to_donate = current_priority;
-	// 			lock_to_update = lock_to_update->holder->waiting_lock;
-	// 			continue;
-	// 		}
-	// 	}
-	// 	break;
-	// }
-
-	/* 안되는 버전 1 : 다다음 락에 닿지 못함. lock_to_update->holder != NULL을 하나라도 풀면 오류남. */
-	// struct lock *lock_to_update = lock;
-	// // 락이 기부할 우선순위가 현재 쓰레드의 우선순위보다 낮다면
-	// while (lock_to_update->priority_to_donate < current_priority)
-	// {
-	// 	lock_to_update->priority_to_donate = current_priority; // 락 기부 우선순위 갱신
-
-	// 	// 락 홀더의 우선순위가 현재 쓰레드의 우선순위보다 낮다면
-	// 	if (lock_to_update->holder != NULL && lock_to_update->holder->priority < current_priority)
-	// 	{
-	// 		// 기부를 처음 받는다면 old_priority에 이전 우선순위를 저장한다
-	// 		if (lock_to_update->holder->old_priority == -1)
-	// 			lock_to_update->holder->old_priority = current_priority;
-
-	// 		lock_to_update->holder->priority = current_priority;
-	// 	}
-
-	// 	if (lock_to_update->holder != NULL && lock_to_update->holder->waiting_lock != NULL)
-	// 		lock_to_update = lock_to_update->holder->waiting_lock;
-	// }
-
 	sema_down(&lock->semaphore);
 	list_push_front(&(thread_current()->lock_list), &lock->elem); // 해당 쓰레드의 갖고있는 락 리스트에 락을 넣어준다.
 	lock->holder = thread_current();
-	thread_current()->im_waiting = 0;
 	lock->holder->waiting_lock = NULL; // 기다리고 있는 락을 없애준다
 }
 

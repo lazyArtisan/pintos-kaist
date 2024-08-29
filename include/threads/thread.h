@@ -98,7 +98,6 @@ struct thread
 	int birth_time;			   /* 태어난 시간 */
 	struct list lock_list;	   /* 자신이 갖고 있는 락들 */
 	struct lock *waiting_lock; /* 자신이 대기하고 있는 락 */
-	int im_waiting;			   /* 오류를 피하기 위한 개어거지 플래그 */
 
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem; /* List element. */
