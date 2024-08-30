@@ -172,11 +172,13 @@ timer_interrupt(struct intr_frame *args UNUSED)
 		/* 1초마다 모든 쓰레드의 recent_cpu 갱신 */
 		if (timer_ticks() % TIMER_FREQ == 0)
 		{
+			// 현재 쓰레드는 recent_cpu 재계산
 			update_recent_cpu(thread_current());
+			// 나머지 쓰레드는 0으로 초기화
 			for (e = list_begin(&ready_list); e != list_end(&ready_list); e = list_next(e))
 			{
 				ready_thread = list_entry(e, struct thread, elem);
-				update_recent_cpu(ready_thread);
+				ready_thread->recent_cpu = 0;
 			}
 		}
 
@@ -188,7 +190,7 @@ timer_interrupt(struct intr_frame *args UNUSED)
 				ready_thread = list_entry(e, struct thread, elem);
 				ready_thread->priority = thread_calculate_priority(ready_thread);
 			}
-			thread_set_priority(thread_calculate_priority(thread_current()));
+			thread_current()->priority = thread_calculate_priority(thread_current());
 		}
 	}
 }
