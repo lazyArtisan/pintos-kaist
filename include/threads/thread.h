@@ -98,6 +98,8 @@ struct thread
 	int birth_time;			   /* 태어난 시간 */
 	struct list lock_list;	   /* 자신이 갖고 있는 락들 */
 	struct lock *waiting_lock; /* 자신이 대기하고 있는 락 */
+	int nice;
+	int recent_cpu;
 
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem; /* List element. */
@@ -151,6 +153,8 @@ void thread_set_priority(int);
 
 int thread_get_nice(void);
 void thread_set_nice(int);
+void update_recent_cpu(struct thread *t);
+int thread_calculate_priority(struct thread *t);
 int thread_get_recent_cpu(void);
 int thread_get_load_avg(void);
 

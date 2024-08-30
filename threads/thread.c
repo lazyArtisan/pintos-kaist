@@ -11,6 +11,41 @@
 #include "threads/synch.h"
 #include "threads/vaddr.h"
 #include "intrinsic.h"
+#define F (1 << 14) // 17.14 형식의 고정 소수점에서의 f 값
+
+// n을 고정 소수점으로 변환
+#define N_TO_FIXED(n) ((n) * F)
+
+// 고정 소수점을 정수로 변환 (소수점 버림)
+#define FIXED_TO_INT_ZERO(x) ((x) / F)
+
+// 고정 소수점을 정수로 변환 (가까운 값으로 반올림)
+#define FIXED_TO_INT_NEAREST(x) (((x) >= 0) ? ((x) + (F / 2)) / F : ((x) - (F / 2)) / F)
+
+// x와 y 더하기
+#define ADD_FIXED(x, y) ((x) + (y))
+
+// y를 x에서 빼기
+#define SUB_FIXED(x, y) ((x) - (y))
+
+// x에 n을 더하기
+#define ADD_INT_TO_FIXED(x, n) ((x) + (n) * F)
+
+// n을 x에서 빼기
+#define SUB_INT_FROM_FIXED(x, n) ((x) - (n) * F)
+
+// x와 y 곱하기
+#define MUL_FIXED(x, y) ((((int64_t)(x)) * (y)) / F)
+
+// x와 n 곱하기
+#define MUL_INT_TO_FIXED(x, n) ((x) * (n))
+
+// x를 y로 나누기
+#define DIV_FIXED(x, y) ((((int64_t)(x)) * F) / (y))
+
+// x를 n으로 나누기
+#define DIV_FIXED_BY_INT(x, n) ((x) / (n))
+
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -68,6 +103,7 @@ static void init_thread(struct thread *, const char *name, int priority);
 static void do_schedule(int status);
 static void schedule(void);
 static tid_t allocate_tid(void);
+int load_avg = 0;
 
 void reschedule_by_priority(void);	 // 우선순위에 따라 대기 리스트 정렬 및 preemption
 void check_priority_and_yield(void); // 현재 실행중인 쓰레드의 우선순위가 낮으면 yield
@@ -350,12 +386,15 @@ void check_priority_and_yield(void)
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void thread_set_priority(int new_priority)
 {
-	thread_current()->priority = new_priority;
-	if (thread_current()->old_priority != -1)
-		thread_current()->old_priority = new_priority;
-	update_priority(new_priority, thread_current());
+	if (!thread_mlfqs)
+	{
+		thread_current()->priority = new_priority;
+		if (thread_current()->old_priority != -1)
+			thread_current()->old_priority = new_priority;
+		update_priority(new_priority, thread_current());
 
-	check_priority_and_yield();
+		check_priority_and_yield();
+	}
 }
 
 /* Returns the current thread's priority. */
@@ -364,31 +403,79 @@ int thread_get_priority(void)
 	return thread_current()->priority;
 }
 
+/* mlfqs를 위해 priority 새로 계산하기 */
+int thread_calculate_priority(struct thread *t)
+{
+	int recent_cpu = t->recent_cpu;
+	int nice = t->nice;
+	// int priority = PRI_MAX - ((recent_cpu / 4) - (nice * 2) * F);
+	int priority = PRI_MAX - FIXED_TO_INT_NEAREST(SUB_FIXED(DIV_FIXED(recent_cpu, N_TO_FIXED(4)), N_TO_FIXED(nice * 2)));
+	return priority;
+}
+
+void update_recent_cpu(struct thread *t)
+{
+	// recent_cpu = decay * recent_cpu + nice
+	// decay = (2*load_average)/(2*load_average+1)
+	// load_avg = (59/60) * load_avg + (1/60) * ready_threads
+
+	// load_avg 계산
+	int ready_threads = list_size(&ready_list);
+	if (thread_current() != idle_thread)
+		ready_threads = ready_threads + 1;
+
+	load_avg = ADD_FIXED(MUL_FIXED(load_avg, DIV_FIXED(N_TO_FIXED(59), N_TO_FIXED(60))), DIV_FIXED(N_TO_FIXED(ready_threads), N_TO_FIXED(60)));
+	// printf("ready_list size : %d", list_size(&ready_list));
+	// printf("Updated load_avg: %d\n", FIXED_TO_INT_NEAREST(load_avg));
+
+	// recent_cpu = decay * recent_cpu + nice
+	t->recent_cpu = ADD_FIXED(
+		MUL_FIXED(
+			DIV_FIXED(
+				MUL_INT_TO_FIXED(load_avg, 2),
+				ADD_FIXED(MUL_INT_TO_FIXED(load_avg, 2), N_TO_FIXED(1))),
+			t->recent_cpu),
+		N_TO_FIXED(t->nice));
+
+	// recent_cpu는 고정 소수점 값이므로, 반환할 때 정수로 변환해 반환해야 합니다.
+	return FIXED_TO_INT_ZERO(t->recent_cpu);
+}
+
 /* Sets the current thread's nice value to NICE. */
 void thread_set_nice(int nice UNUSED)
 {
-	/* TODO: Your implementation goes here */
+	/*현재 쓰레드의 nice value를 새로운 nice value로 수정하고,
+	다시 쓰레드의 우선순위를 새로 결정된 nice value를 기반으로 계산한다(바로 아래의 Calculating Priority를 참고할 것).
+	만약 현재 작동중인 쓰레드가 가장 높은 우선순위가 아니라면, CPU의 점유를 포기한다.*/
+
+	if (20 < nice)
+		nice = 20;
+	if (nice < -20)
+		nice = -20;
+
+	thread_current()->nice = nice;
+	// printf("nice는 이걸로 설정했다. : %d", nice);
+	// printf("실제로 설정된 nice 출력 : %d", thread_current()->nice); << 문제 없음!
+	int priority = thread_calculate_priority(thread_current());
+	thread_set_priority(priority);
 }
 
 /* Returns the current thread's nice value. */
 int thread_get_nice(void)
 {
-	/* TODO: Your implementation goes here */
-	return 0;
+	return thread_current()->nice;
 }
 
 /* Returns 100 times the system load average. */
 int thread_get_load_avg(void)
 {
-	/* TODO: Your implementation goes here */
-	return 0;
+	return FIXED_TO_INT_NEAREST(load_avg) * 100;
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int thread_get_recent_cpu(void)
 {
-	/* TODO: Your implementation goes here */
-	return 0;
+	return FIXED_TO_INT_NEAREST(thread_current()->recent_cpu) * 100;
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -460,6 +547,8 @@ init_thread(struct thread *t, const char *name, int priority)
 	t->waiting_lock = NULL;
 	t->magic = THREAD_MAGIC;
 	list_init(&(t->lock_list));
+	t->nice = 0;
+	t->recent_cpu = 0;
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should

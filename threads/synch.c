@@ -69,18 +69,6 @@ void sema_down(struct semaphore *sema)
 	while (sema->value <= 0)
 	{
 		list_insert_ordered(&sema->waiters, &thread_current()->elem, &for_descending_priority, NULL);
-
-		// struct list_elem *e = list_begin(&sema->waiters);
-		// int i = 1;
-		// while (e != list_end(&sema->waiters))
-		// {
-		// 	struct thread *exam = list_entry(e, struct thread, elem);
-		// 	printf("세마포어 대기 리스트 %d 번째 요소의 priority : %d\n", i, exam->priority);
-		// 	e = list_next(e);
-		// 	i++;
-		// }
-		// printf("\n");
-
 		thread_block();
 	}
 
@@ -210,36 +198,41 @@ void lock_acquire(struct lock *lock)
 	ASSERT(!lock_held_by_current_thread(lock)); // current_thread는 해당 락 아직 안 갖고 있음
 
 	thread_current()->waiting_lock = lock; // 해당 쓰레드가 기다리고 있는 락을 저장한다
-	int current_priority = thread_current()->priority;
 
-	struct lock *lock_n = lock;
-	// 만약 lock holder가 있었다면 (= lock을 기다려야 한다면)
-	while (lock_n->holder != NULL)
+	if (!thread_mlfqs)
 	{
-		// 락 기부 우선순위를 갱신한다
-		if (lock_n->priority_to_donate < current_priority)
+		int current_priority = thread_current()->priority;
+
+		struct lock *lock_n = lock;
+		/* 근데 이거 우선순위 비교 없이 그냥 넣어도 된다고 함. */
+		// 만약 lock holder가 있었다면 (= lock을 기다려야 한다면)
+		while (lock_n->holder != NULL)
 		{
-			lock_n->priority_to_donate = current_priority;
-
-			// 락 홀더의 우선순위가 현재 쓰레드의 우선순위보다 낮다면
-			if (lock_n->holder->priority < current_priority)
+			// 락 기부 우선순위를 갱신한다
+			if (lock_n->priority_to_donate < current_priority)
 			{
-				// 기부를 처음 받는다면 old_priority에 이전 우선순위를 저장한다
-				if (lock_n->holder->old_priority == -1)
-					lock_n->holder->old_priority = lock->holder->priority;
+				lock_n->priority_to_donate = current_priority;
 
-				// 락 홀더 우선순위를 갱신한다
-				lock_n->holder->priority = current_priority;
-
-				// 락 홀더가 기다리고 있는 락이 있었다면
-				if (lock_n->holder->waiting_lock != NULL)
+				// 락 홀더의 우선순위가 현재 쓰레드의 우선순위보다 낮다면
+				if (lock_n->holder->priority < current_priority)
 				{
-					lock_n = lock_n->holder->waiting_lock;
-					continue;
+					// 기부를 처음 받는다면 old_priority에 이전 우선순위를 저장한다
+					if (lock_n->holder->old_priority == -1)
+						lock_n->holder->old_priority = lock->holder->priority;
+
+					// 락 홀더 우선순위를 갱신한다
+					lock_n->holder->priority = current_priority;
+
+					// 락 홀더가 기다리고 있는 락이 있었다면
+					if (lock_n->holder->waiting_lock != NULL)
+					{
+						lock_n = lock_n->holder->waiting_lock;
+						continue;
+					}
 				}
 			}
+			break;
 		}
-		break;
 	}
 
 	sema_down(&lock->semaphore);
@@ -303,30 +296,33 @@ void lock_release(struct lock *lock)
 	// 자신이 가진 lock들의 list에서 해당 lock을 지워버린다
 	list_remove(&lock->elem);
 
-	/* 내려놓은 lock의 우선순위를 갱신해준다 */
-	if (lock->holder->old_priority != -1) // 우선순위를 기부받은 적이 있었다면
+	if (!thread_mlfqs)
 	{
-		struct lock *lock_to_update = lock;
-		while (lock_to_update != NULL && lock_to_update->holder != NULL)
+		/* 내려놓은 lock의 우선순위를 갱신해준다 */
+		if (lock->holder->old_priority != -1) // 우선순위를 기부받은 적이 있었다면
 		{
-			// 자신이 가진 락들을 다시 순회하여 최대 priority 얻기
-			int max_priority = lock_to_update->holder->old_priority;
-			struct list *holders_lock_list = &lock_to_update->holder->lock_list;
-			struct list_elem *e;
-			for (e = list_begin(holders_lock_list); e != list_end(holders_lock_list); e = list_next(e))
+			struct lock *lock_to_update = lock;
+			while (lock_to_update != NULL && lock_to_update->holder != NULL)
 			{
-				int elem_priority = list_entry(e, struct lock, elem)->priority_to_donate;
-				max_priority = (elem_priority > max_priority) ? elem_priority : max_priority;
+				// 자신이 가진 락들을 다시 순회하여 최대 priority 얻기
+				int max_priority = lock_to_update->holder->old_priority;
+				struct list *holders_lock_list = &lock_to_update->holder->lock_list;
+				struct list_elem *e;
+				for (e = list_begin(holders_lock_list); e != list_end(holders_lock_list); e = list_next(e))
+				{
+					int elem_priority = list_entry(e, struct lock, elem)->priority_to_donate;
+					max_priority = (elem_priority > max_priority) ? elem_priority : max_priority;
+				}
+
+				// 만약 기부금이 부족했다면 old_priority를 -1로 바꿔주기
+				if (max_priority == lock_to_update->holder->old_priority)
+					lock_to_update->holder->old_priority = -1;
+
+				lock_to_update->holder->priority = max_priority;
+
+				// 다음 waiting_lock으로 이동
+				lock_to_update = lock_to_update->holder->waiting_lock;
 			}
-
-			// 만약 기부금이 부족했다면 old_priority를 -1로 바꿔주기
-			if (max_priority == lock_to_update->holder->old_priority)
-				lock_to_update->holder->old_priority = -1;
-
-			lock_to_update->holder->priority = max_priority;
-
-			// 다음 waiting_lock으로 이동
-			lock_to_update = lock_to_update->holder->waiting_lock;
 		}
 	}
 

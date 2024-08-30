@@ -155,6 +155,42 @@ timer_interrupt(struct intr_frame *args UNUSED)
 	}
 	// TODO: 시간 기준으로 sleeping_list에 정렬되게 삽입하고 맨 앞만 확인
 	// TODO : 쓰레드에 추가하지 말고 새 구조체 만들어서 공간 효율화
+
+	if (thread_mlfqs)
+	{
+		// priority = PRI_MAX - (recent_cpu / 4) - (nice * 2)
+		// recent_cpu = (2 * load_avg) / (2 * load_avg + 1) *recent_cpu + nice
+		// load_avg = (59 / 60) * load_avg + (1 / 60) * ready_threads
+
+		/* 1틱마다 현재 돌고 있는 쓰레드의 recent_cpu 1씩 증가 */
+		thread_current()->recent_cpu = thread_current()->recent_cpu + 1;
+		// printf("Updated recent_cpu: %d\n", thread_current()->recent_cpu);
+
+		struct list_elem *e;
+		struct thread *ready_thread;
+
+		/* 1초마다 모든 쓰레드의 recent_cpu 갱신 */
+		if (timer_ticks() % TIMER_FREQ == 0)
+		{
+			update_recent_cpu(thread_current());
+			for (e = list_begin(&ready_list); e != list_end(&ready_list); e = list_next(e))
+			{
+				ready_thread = list_entry(e, struct thread, elem);
+				update_recent_cpu(ready_thread);
+			}
+		}
+
+		/* 4틱마다 모든 쓰레드 pirority 재계산 */
+		if (timer_ticks() % 4 == 0)
+		{
+			for (e = list_begin(&ready_list); e != list_end(&ready_list); e = list_next(e))
+			{
+				ready_thread = list_entry(e, struct thread, elem);
+				ready_thread->priority = thread_calculate_priority(ready_thread);
+			}
+			thread_set_priority(thread_calculate_priority(thread_current()));
+		}
+	}
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
