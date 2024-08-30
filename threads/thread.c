@@ -13,38 +13,23 @@
 #include "intrinsic.h"
 #define F (1 << 14) // 17.14 형식의 고정 소수점에서의 f 값
 
-// n을 고정 소수점으로 변환
-#define N_TO_FIXED(n) ((n) * F)
+// 정수 -> 실수
+#define I_T_F(n) ((n) * F)
 
-// 고정 소수점을 정수로 변환 (소수점 버림)
-#define FIXED_TO_INT_ZERO(x) ((x) / F)
+// 실수 -> 정수
+#define F_T_I(x) (((x) >= 0) ? ((x) + (F / 2)) / F : ((x) - (F / 2)) / F)
 
-// 고정 소수점을 정수로 변환 (가까운 값으로 반올림)
-#define FIXED_TO_INT_NEAREST(x) (((x) >= 0) ? ((x) + (F / 2)) / F : ((x) - (F / 2)) / F)
+// 실수 + 실수
+#define ADD_I_F(x, n) ((x) + (n) * F)
 
-// x와 y 더하기
-#define ADD_FIXED(x, y) ((x) + (y))
+// 실수 - 정수
+#define SUB_F_I(x, n) ((x) - (n) * F)
 
-// y를 x에서 빼기
-#define SUB_FIXED(x, y) ((x) - (y))
+// 실수 * 실수
+#define MUL_F(x, y) ((((int64_t)(x)) * (y)) / F)
 
-// x에 n을 더하기
-#define ADD_INT_TO_FIXED(x, n) ((x) + (n) * F)
-
-// n을 x에서 빼기
-#define SUB_INT_FROM_FIXED(x, n) ((x) - (n) * F)
-
-// x와 y 곱하기
-#define MUL_FIXED(x, y) ((((int64_t)(x)) * (y)) / F)
-
-// x와 n 곱하기
-#define MUL_INT_TO_FIXED(x, n) ((x) * (n))
-
-// x를 y로 나누기
-#define DIV_FIXED(x, y) ((((int64_t)(x)) * F) / (y))
-
-// x를 n으로 나누기
-#define DIV_FIXED_BY_INT(x, n) ((x) / (n))
+// 실수 / 실수
+#define DIV_F(x, y) ((((int64_t)(x)) * F) / (y))
 
 #ifdef USERPROG
 #include "userprog/process.h"
@@ -64,7 +49,7 @@
 struct list ready_list;
 
 /* Idle thread. */
-static struct thread *idle_thread;
+struct thread *idle_thread;
 
 /* Initial thread, the thread running init.c:main(). */
 static struct thread *initial_thread;
@@ -95,6 +80,8 @@ static unsigned thread_ticks; /* # of timer ticks since last yield. */
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
 
+int load_avg = 0;
+
 static void kernel_thread(thread_func *, void *aux);
 
 static void idle(void *aux UNUSED);
@@ -103,7 +90,6 @@ static void init_thread(struct thread *, const char *name, int priority);
 static void do_schedule(int status);
 static void schedule(void);
 static tid_t allocate_tid(void);
-int load_avg = 0;
 
 void reschedule_by_priority(void);	 // 우선순위에 따라 대기 리스트 정렬 및 preemption
 void check_priority_and_yield(void); // 현재 실행중인 쓰레드의 우선순위가 낮으면 yield
@@ -408,37 +394,22 @@ int thread_calculate_priority(struct thread *t)
 {
 	int recent_cpu = t->recent_cpu;
 	int nice = t->nice;
-	// int priority = PRI_MAX - ((recent_cpu / 4) - (nice * 2) * F);
-	int priority = PRI_MAX - FIXED_TO_INT_NEAREST(SUB_FIXED(DIV_FIXED(recent_cpu, N_TO_FIXED(4)), N_TO_FIXED(nice * 2)));
+	int priority = PRI_MAX - F_T_I(DIV_F(recent_cpu, I_T_F(4))) - (2 * nice);
 	return priority;
 }
 
+/* 현재 쓰레드의 recent_cpu 계산 */
 void update_recent_cpu(struct thread *t)
 {
-	// recent_cpu = decay * recent_cpu + nice
-	// decay = (2*load_average)/(2*load_average+1)
-	// load_avg = (59/60) * load_avg + (1/60) * ready_threads
-
 	// load_avg 계산
 	int ready_threads = list_size(&ready_list);
 	if (thread_current() != idle_thread)
 		ready_threads = ready_threads + 1;
 
-	load_avg = ADD_FIXED(MUL_FIXED(load_avg, DIV_FIXED(N_TO_FIXED(59), N_TO_FIXED(60))), DIV_FIXED(N_TO_FIXED(ready_threads), N_TO_FIXED(60)));
-	// printf("ready_list size : %d", list_size(&ready_list));
-	// printf("Updated load_avg: %d\n", FIXED_TO_INT_NEAREST(load_avg));
+	load_avg = MUL_F(DIV_F(I_T_F(59), F_T_I(60)), load_avg) + DIV_F(I_T_F(ready_threads), I_T_F(60));
 
-	// recent_cpu = decay * recent_cpu + nice
-	t->recent_cpu = ADD_FIXED(
-		MUL_FIXED(
-			DIV_FIXED(
-				MUL_INT_TO_FIXED(load_avg, 2),
-				ADD_FIXED(MUL_INT_TO_FIXED(load_avg, 2), N_TO_FIXED(1))),
-			t->recent_cpu),
-		N_TO_FIXED(t->nice));
-
-	// recent_cpu는 고정 소수점 값이므로, 반환할 때 정수로 변환해 반환해야 합니다.
-	return FIXED_TO_INT_ZERO(t->recent_cpu);
+	// recent_cpu 계산
+	t->recent_cpu = MUL_F(DIV_F(MUL_F(I_T_F(2), load_avg), SUB_F_I(MUL_F(I_T_F(2), load_avg), 1)), ADD_I_F(t->recent_cpu, t->nice));
 }
 
 /* Sets the current thread's nice value to NICE. */
@@ -448,14 +419,7 @@ void thread_set_nice(int nice UNUSED)
 	다시 쓰레드의 우선순위를 새로 결정된 nice value를 기반으로 계산한다(바로 아래의 Calculating Priority를 참고할 것).
 	만약 현재 작동중인 쓰레드가 가장 높은 우선순위가 아니라면, CPU의 점유를 포기한다.*/
 
-	if (20 < nice)
-		nice = 20;
-	if (nice < -20)
-		nice = -20;
-
 	thread_current()->nice = nice;
-	// printf("nice는 이걸로 설정했다. : %d", nice);
-	// printf("실제로 설정된 nice 출력 : %d", thread_current()->nice); << 문제 없음!
 	int priority = thread_calculate_priority(thread_current());
 	thread_set_priority(priority);
 }
@@ -469,13 +433,13 @@ int thread_get_nice(void)
 /* Returns 100 times the system load average. */
 int thread_get_load_avg(void)
 {
-	return FIXED_TO_INT_NEAREST(load_avg) * 100;
+	return F_T_I(load_avg * 100);
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int thread_get_recent_cpu(void)
 {
-	return FIXED_TO_INT_NEAREST(thread_current()->recent_cpu) * 100;
+	return F_T_I(thread_current()->recent_cpu * 100);
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.

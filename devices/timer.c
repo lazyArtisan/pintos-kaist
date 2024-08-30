@@ -91,6 +91,13 @@ timer_elapsed(int64_t then)
 	return timer_ticks() - then;
 }
 
+bool for_ascending_sleep_time(const struct list_elem *a, const struct list_elem *b, void *aux)
+{
+	int ap = list_entry(a, struct thread, elem)->sleep_ticks;
+	int bp = list_entry(b, struct thread, elem)->sleep_ticks;
+	return ap < bp;
+}
+
 /* Suspends execution for approximately TICKS timer ticks. */
 void timer_sleep(int64_t ticks)
 {
@@ -99,7 +106,9 @@ void timer_sleep(int64_t ticks)
 
 	sleeping_thread->sleep_ticks = timer_ticks() + ticks;
 
+	// list_insert_ordered(&sleeping_list, &(sleeping_thread->elem), for_ascending_sleep_time, NULL); // 명부에 정보 전달
 	list_push_back(&sleeping_list, &(sleeping_thread->elem)); // 명부에 정보 전달
+
 	enum intr_level old_level = intr_disable();
 	thread_block(); // 드르렁. 명부에서 자기 이름 나오면 딱 1번 깨서 마저 실행.
 	intr_set_level(old_level);
@@ -136,6 +145,21 @@ timer_interrupt(struct intr_frame *args UNUSED)
 	ticks++;
 	thread_tick();
 
+	// while (!list_empty(&sleeping_list))
+	// {
+	// 	// struct list_elem *front = list_front(&sleeping_list);
+	// 	struct thread *th = list_entry(list_front(&sleeping_list), struct thread, elem);
+	// 	// struct thread *sleeping_thread = list_entry(f, struct thread, elem)->sleep_ticks;
+	// 	if (th->sleep_ticks <= timer_ticks())
+	// 	{
+	// 		thread_unblock(list_entry(list_pop_front(&sleeping_list), struct thread, elem));
+	// 	}
+	// 	else
+	// 	{
+	// 		break;
+	// 	}
+	// }
+
 	// 드르렁 중인 친구들 수면 시간 체크하고 깨어날 시간이면 깨운다
 	struct list_elem *listE = list_begin(&sleeping_list);
 	while (listE != list_end(&sleeping_list))
@@ -153,8 +177,6 @@ timer_interrupt(struct intr_frame *args UNUSED)
 			listE = list_next(listE); // 다음 요소로 이동
 		}
 	}
-	// TODO: 시간 기준으로 sleeping_list에 정렬되게 삽입하고 맨 앞만 확인
-	// TODO : 쓰레드에 추가하지 말고 새 구조체 만들어서 공간 효율화
 
 	if (thread_mlfqs)
 	{
@@ -163,7 +185,8 @@ timer_interrupt(struct intr_frame *args UNUSED)
 		// load_avg = (59 / 60) * load_avg + (1 / 60) * ready_threads
 
 		/* 1틱마다 현재 돌고 있는 쓰레드의 recent_cpu 1씩 증가 */
-		thread_current()->recent_cpu = thread_current()->recent_cpu + 1;
+		if (thread_current() != idle_thread)
+			thread_current()->recent_cpu = thread_current()->recent_cpu + (1 << 14);
 		// printf("Updated recent_cpu: %d\n", thread_current()->recent_cpu);
 
 		struct list_elem *e;
@@ -172,13 +195,11 @@ timer_interrupt(struct intr_frame *args UNUSED)
 		/* 1초마다 모든 쓰레드의 recent_cpu 갱신 */
 		if (timer_ticks() % TIMER_FREQ == 0)
 		{
-			// 현재 쓰레드는 recent_cpu 재계산
 			update_recent_cpu(thread_current());
-			// 나머지 쓰레드는 0으로 초기화
 			for (e = list_begin(&ready_list); e != list_end(&ready_list); e = list_next(e))
 			{
 				ready_thread = list_entry(e, struct thread, elem);
-				ready_thread->recent_cpu = 0;
+				update_recent_cpu(ready_thread);
 			}
 		}
 
@@ -190,7 +211,7 @@ timer_interrupt(struct intr_frame *args UNUSED)
 				ready_thread = list_entry(e, struct thread, elem);
 				ready_thread->priority = thread_calculate_priority(ready_thread);
 			}
-			thread_current()->priority = thread_calculate_priority(thread_current());
+			thread_set_priority(thread_calculate_priority(thread_current()));
 		}
 	}
 }
