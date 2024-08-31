@@ -91,6 +91,13 @@ timer_elapsed(int64_t then)
 	return timer_ticks() - then;
 }
 
+bool for_ascending_sleep_time(const struct list_elem *a, const struct list_elem *b, void *aux)
+{
+	int ap = list_entry(a, struct thread, elem)->sleep_ticks;
+	int bp = list_entry(b, struct thread, elem)->sleep_ticks;
+	return ap < bp;
+}
+
 /* Suspends execution for approximately TICKS timer ticks. */
 void timer_sleep(int64_t ticks)
 {
@@ -99,7 +106,9 @@ void timer_sleep(int64_t ticks)
 
 	sleeping_thread->sleep_ticks = timer_ticks() + ticks;
 
+	// list_insert_ordered(&sleeping_list, &(sleeping_thread->elem), for_ascending_sleep_time, NULL); // 명부에 정보 전달
 	list_push_back(&sleeping_list, &(sleeping_thread->elem)); // 명부에 정보 전달
+
 	enum intr_level old_level = intr_disable();
 	thread_block(); // 드르렁. 명부에서 자기 이름 나오면 딱 1번 깨서 마저 실행.
 	intr_set_level(old_level);
@@ -136,6 +145,21 @@ timer_interrupt(struct intr_frame *args UNUSED)
 	ticks++;
 	thread_tick();
 
+	// while (!list_empty(&sleeping_list))
+	// {
+	// 	// struct list_elem *front = list_front(&sleeping_list);
+	// 	struct thread *th = list_entry(list_front(&sleeping_list), struct thread, elem);
+	// 	// struct thread *sleeping_thread = list_entry(f, struct thread, elem)->sleep_ticks;
+	// 	if (th->sleep_ticks <= timer_ticks())
+	// 	{
+	// 		thread_unblock(list_entry(list_pop_front(&sleeping_list), struct thread, elem));
+	// 	}
+	// 	else
+	// 	{
+	// 		break;
+	// 	}
+	// }
+
 	// 드르렁 중인 친구들 수면 시간 체크하고 깨어날 시간이면 깨운다
 	struct list_elem *listE = list_begin(&sleeping_list);
 	while (listE != list_end(&sleeping_list))
@@ -152,8 +176,6 @@ timer_interrupt(struct intr_frame *args UNUSED)
 			listE = list_next(listE); // 다음 요소로 이동
 		}
 	}
-	// TODO: 시간 기준으로 sleeping_list에 정렬되게 삽입하고 맨 앞만 확인
-	// TODO : 쓰레드에 추가하지 말고 새 구조체 만들어서 공간 효율화
 
 	if (thread_mlfqs)
 	{

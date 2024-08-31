@@ -15,7 +15,11 @@
 
 // 정수 -> 실수
 #define I_T_F(n) ((n) * F)
+// 정수 -> 실수
+#define I_T_F(n) ((n) * F)
 
+// 실수 -> 정수
+#define F_T_I(x) (((x) >= 0) ? ((x) + (F / 2)) / F : ((x) - (F / 2)) / F)
 // 실수 -> 정수
 #define F_T_I(x) (((x) >= 0) ? ((x) + (F / 2)) / F : ((x) - (F / 2)) / F)
 
@@ -24,10 +28,16 @@
 
 // 실수 - 정수
 #define SUB_F_I(x, n) ((x) - (n) * F)
+// 실수 - 정수
+#define SUB_F_I(x, n) ((x) - (n) * F)
 
 // 실수 * 실수
 #define MUL_F(x, y) ((((int64_t)(x)) * (y)) / F)
+// 실수 * 실수
+#define MUL_F(x, y) ((((int64_t)(x)) * (y)) / F)
 
+// 실수 / 실수
+#define DIV_F(x, y) ((((int64_t)(x)) * F) / (y))
 // 실수 / 실수
 #define DIV_F(x, y) ((((int64_t)(x)) * F) / (y))
 
@@ -49,7 +59,7 @@
 struct list ready_list;
 
 /* Idle thread. */
-static struct thread *idle_thread;
+struct thread *idle_thread;
 
 /* Initial thread, the thread running init.c:main(). */
 static struct thread *initial_thread;
@@ -83,6 +93,8 @@ static unsigned thread_ticks; /* # of timer ticks since last yield. */
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
 
+int load_avg = 0;
+
 static void kernel_thread(thread_func *, void *aux);
 
 static void idle(void *aux UNUSED);
@@ -91,7 +103,6 @@ static void init_thread(struct thread *, const char *name, int priority);
 static void do_schedule(int status);
 static void schedule(void);
 static tid_t allocate_tid(void);
-int load_avg = 0;
 
 void reschedule_by_priority(void);	 // 우선순위에 따라 대기 리스트 정렬 및 preemption
 void check_priority_and_yield(void); // 현재 실행중인 쓰레드의 우선순위가 낮으면 yield
@@ -457,11 +468,13 @@ int thread_get_nice(void)
 int thread_get_load_avg(void)
 {
 	return F_T_I(load_avg * 100);
+	return F_T_I(load_avg * 100);
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int thread_get_recent_cpu(void)
 {
+	return F_T_I(thread_current()->recent_cpu * 100);
 	return F_T_I(thread_current()->recent_cpu * 100);
 }
 
