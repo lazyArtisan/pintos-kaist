@@ -173,7 +173,7 @@ timer_interrupt(struct intr_frame *args UNUSED)
 		}
 		else
 		{
-			listE = list_next(listE); // 다음 요소로 이동
+			listE = list_next(listE); // 다음 요소로 이동.
 		}
 	}
 
