@@ -102,7 +102,8 @@ struct thread
 	int recent_cpu;
 
 	/* Shared between thread.c and synch.c. */
-	struct list_elem elem; /* List element. */
+	struct list_elem elem;	   /* List element. */
+	struct list_elem all_elem; /* all_thread_list를 위한 elem */
 
 #ifdef USERPROG
 	/* Owned by userprog/process.c. */
@@ -122,6 +123,7 @@ struct thread
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
+void calculate_ready_thread(void);
 
 void thread_init(void);
 void thread_start(void);
@@ -138,8 +140,9 @@ void thread_unblock(struct thread *);
 void check_priority_and_yield(void); // 현재 실행중인 쓰레드의 우선순위가 낮으면 yield
 bool for_descending_priority(const struct list_elem *a, const struct list_elem *b, void *aux);
 
-extern struct list sleeping_list; // 드르렁 리스트
-extern struct list ready_list;	  // 쓰레드 대기 리스트
+extern struct list sleeping_list;	// 드르렁 리스트
+extern struct list ready_list;		// 쓰레드 대기 리스트
+extern struct list all_thread_list; // 모든 쓰레드가 있는 리스트
 
 struct thread *thread_current(void);
 tid_t thread_tid(void);

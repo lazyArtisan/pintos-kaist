@@ -19,8 +19,8 @@
 // 실수 -> 정수
 #define F_T_I(x) (((x) >= 0) ? ((x) + (F / 2)) / F : ((x) - (F / 2)) / F)
 
-// 실수 + 실수
-#define ADD_I_F(x, n) ((x) + (n) * F)
+// 실수 + 정수
+#define ADD_F_I(x, n) ((x) + (n) * F)
 
 // 실수 - 정수
 #define SUB_F_I(x, n) ((x) - (n) * F)
@@ -65,6 +65,9 @@ struct list sleeping_list;
 
 /* 자기가 갖고 있는 락들 */
 struct list lock_list;
+
+/* 모든 쓰레드가 있는 리스트 */
+struct list all_thread_list;
 
 /* Statistics. */
 static long long idle_ticks;   /* # of timer ticks spent idle. */
@@ -141,6 +144,7 @@ void thread_init(void)
 	list_init(&destruction_req);
 	list_init(&sleeping_list);
 	list_init(&lock_list);
+	list_init(&all_thread_list);
 
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread();
@@ -235,6 +239,8 @@ tid_t thread_create(const char *name, int priority,
 	t->tf.ss = SEL_KDSEG;
 	t->tf.cs = SEL_KCSEG;
 	t->tf.eflags = FLAG_IF;
+
+	list_push_back(&all_thread_list, &t->all_elem);
 
 	/* Add to run queue. */
 	thread_unblock(t);
@@ -394,25 +400,44 @@ int thread_calculate_priority(struct thread *t)
 	int recent_cpu = t->recent_cpu;
 	int nice = t->nice;
 	int priority = PRI_MAX - F_T_I(DIV_F(recent_cpu, I_T_F(4))) - (2 * nice);
+
+	if (priority > 63)
+		priority = 63;
+	else if (priority < 0)
+		priority = 0;
+
 	return priority;
+}
+
+int ready_threads;
+
+// ready_threads와 load_avg를 재계산해줌
+void calculate_ready_thread(void)
+{
+	struct list_elem *e;
+	struct thread *t;
+	ready_threads = 0;
+
+	for (e = list_begin(&ready_list); e != list_end(&ready_list); e = list_next(e))
+	{
+		ready_threads += 1;
+	}
+
+	if (thread_current() != idle_thread)
+		ready_threads += 1;
+
+	load_avg = MUL_F(DIV_F(I_T_F(59), I_T_F(60)), load_avg) + MUL_F(DIV_F(I_T_F(1), I_T_F(60)), I_T_F(ready_threads));
 }
 
 /* 현재 쓰레드의 recent_cpu 계산 */
 void update_recent_cpu(struct thread *t)
 {
-	// load_avg 계산
-	int ready_threads = list_size(&ready_list);
-	if (thread_current() != idle_thread)
-		ready_threads = ready_threads + 1;
-
-	load_avg = MUL_F(DIV_F(I_T_F(59), I_T_F(60)), load_avg) + DIV_F(I_T_F(ready_threads), I_T_F(60));
-
 	// recent_cpu 계산
-	t->recent_cpu = MUL_F(DIV_F(MUL_F(I_T_F(2), load_avg), SUB_F_I(MUL_F(I_T_F(2), load_avg), 1)), ADD_I_F(t->recent_cpu, t->nice));
+	t->recent_cpu = ADD_F_I(MUL_F(DIV_F(MUL_F(I_T_F(2), load_avg), ADD_F_I(MUL_F(I_T_F(2), load_avg), 1)), t->recent_cpu), t->nice);
 }
 
 /* Sets the current thread's nice value to NICE. */
-void thread_set_nice(int nice UNUSED)
+void thread_set_nice(int nice)
 {
 	/*현재 쓰레드의 nice value를 새로운 nice value로 수정하고,
 	다시 쓰레드의 우선순위를 새로 결정된 nice value를 기반으로 계산한다(바로 아래의 Calculating Priority를 참고할 것).
@@ -420,7 +445,8 @@ void thread_set_nice(int nice UNUSED)
 
 	thread_current()->nice = nice;
 	int priority = thread_calculate_priority(thread_current());
-	thread_set_priority(priority);
+	thread_current()->priority = priority;
+	check_priority_and_yield();
 }
 
 /* Returns the current thread's nice value. */
@@ -638,6 +664,7 @@ do_schedule(int status)
 	{
 		struct thread *victim =
 			list_entry(list_pop_front(&destruction_req), struct thread, elem);
+		list_remove(&victim->all_elem);
 		palloc_free_page(victim);
 	}
 

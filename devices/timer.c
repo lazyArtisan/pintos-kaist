@@ -142,7 +142,6 @@ timer_interrupt(struct intr_frame *args UNUSED)
 	{
 		struct thread *sleeping_thread = list_entry(listE, struct thread, elem);
 
-		// printf("Current timer_ticks: %lld\n", timer_ticks());
 		if (sleeping_thread->sleep_ticks <= timer_ticks()) // 깨어날 시간이 되었을 때
 		{
 			listE = list_remove(listE);		 // 현재 요소를 제거하고 다음 요소로 이동
@@ -158,47 +157,39 @@ timer_interrupt(struct intr_frame *args UNUSED)
 
 	if (thread_mlfqs)
 	{
-		// priority = PRI_MAX - (recent_cpu / 4) - (nice * 2)
-		// recent_cpu = (2 * load_avg) / (2 * load_avg + 1) *recent_cpu + nice
-		// load_avg = (59 / 60) * load_avg + (1 / 60) * ready_threads
+		struct list_elem *e;
+		struct thread *t;
 
 		/* 1틱마다 현재 돌고 있는 쓰레드의 recent_cpu 1씩 증가 */
-		thread_current()->recent_cpu = thread_current()->recent_cpu + 1;
-		// printf("Updated recent_cpu: %d\n", thread_current()->recent_cpu);
-
-		struct list_elem *e;
-		struct thread *ready_thread;
+		thread_current()->recent_cpu = thread_current()->recent_cpu + (1 << 14);
 
 		/* 1초마다 모든 쓰레드의 recent_cpu 갱신 */
 		if (timer_ticks() % TIMER_FREQ == 0)
 		{
-			// 현재 쓰레드는 recent_cpu 재계산
-			update_recent_cpu(thread_current());
-			// 나머지 쓰레드는 0으로 초기화
-			for (e = list_begin(&ready_list); e != list_end(&ready_list); e = list_next(e))
+			calculate_ready_thread();
+
+			for (e = list_begin(&all_thread_list); e != list_end(&all_thread_list); e = list_next(e))
 			{
-				ready_thread = list_entry(e, struct thread, elem);
-				ready_thread->recent_cpu = 0;
+				t = list_entry(e, struct thread, all_elem);
+				update_recent_cpu(t);
 			}
 		}
 
 		/* 4틱마다 모든 쓰레드 pirority 재계산 */
 		if (timer_ticks() % 4 == 0)
 		{
-			for (e = list_begin(&ready_list); e != list_end(&ready_list); e = list_next(e))
+			for (e = list_begin(&all_thread_list); e != list_end(&all_thread_list); e = list_next(e))
 			{
-				ready_thread = list_entry(e, struct thread, elem);
-				ready_thread->priority = thread_calculate_priority(ready_thread);
+				t = list_entry(e, struct thread, all_elem);
+				t->priority = thread_calculate_priority(t);
 			}
-			thread_current()->priority = thread_calculate_priority(thread_current());
 		}
 	}
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
    tick, otherwise false. */
-static bool
-too_many_loops(unsigned loops)
+static bool too_many_loops(unsigned loops)
 {
 	/* Wait for a timer tick. */
 	int64_t start = ticks;
