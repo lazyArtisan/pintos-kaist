@@ -240,8 +240,6 @@ tid_t thread_create(const char *name, int priority,
 	t->tf.cs = SEL_KCSEG;
 	t->tf.eflags = FLAG_IF;
 
-	list_push_back(&all_thread_list, &t->all_elem);
-
 	/* Add to run queue. */
 	thread_unblock(t);
 
@@ -536,6 +534,7 @@ init_thread(struct thread *t, const char *name, int priority)
 	t->waiting_lock = NULL;
 	t->magic = THREAD_MAGIC;
 	list_init(&(t->lock_list));
+	list_push_back(&all_thread_list, &t->all_elem);
 	t->nice = 0;
 	t->recent_cpu = 0;
 }
