@@ -351,6 +351,12 @@ void thread_yield(void)
 	struct thread *curr = thread_current();
 	enum intr_level old_level;
 
+	if (intr_context())
+	{
+		intr_yield_on_return();
+		return;
+	}
+
 	ASSERT(!intr_context());
 
 	old_level = intr_disable();
