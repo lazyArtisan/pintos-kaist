@@ -62,19 +62,19 @@ bool filesys_create(const char *name, off_t initial_size)
 	if (strlen(name) > 50)
 		return 0;
 
-	struct dir *dir_test = dir_open_root();
-	struct inode *inode = NULL;
+	// struct dir *dir_test = dir_open_root();
+	// struct inode *inode = NULL;
 
-	printf("무슨 결과가 나왔는지 궁금해요: %d\n", dir_lookup(dir_test, name, &inode));
+	// printf("무슨 결과가 나왔는지 궁금해요: %d\n", dir_lookup(dir_test, name, &inode));
 
-	if (dir_test != NULL && dir_lookup(dir_test, name, &inode))
-	{
-		printf("무슨 결과가 나왔는지 궁금해요: %d\n", dir_lookup(dir_test, name, &inode));
-		dir_close(dir_test);
-		printf("여기에 닿나요?\n");
-		return false;
-	}
-	dir_close(dir_test);
+	// if (dir_test != NULL && dir_lookup(dir_test, name, &inode))
+	// {
+	// 	printf("무슨 결과가 나왔는지 궁금해요: %d\n", dir_lookup(dir_test, name, &inode));
+	// 	dir_close(dir_test);
+	// 	printf("여기에 닿나요?\n");
+	// 	return false;
+	// }
+	// dir_close(dir_test);
 
 	disk_sector_t inode_sector = 0;
 	struct dir *dir = dir_open_root();
