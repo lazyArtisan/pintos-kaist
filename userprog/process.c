@@ -51,6 +51,9 @@ tid_t process_create_initd(const char *file_name)
 		return TID_ERROR;
 	strlcpy(fn_copy, file_name, PGSIZE);
 
+	char *save_ptr;
+
+	strtok_r(file_name, " ", &save_ptr);
 	/* Create a new thread to execute FILE_NAME. */
 	tid = thread_create(file_name, PRI_DEFAULT, initd, fn_copy);
 	if (tid == TID_ERROR)
@@ -171,14 +174,6 @@ int process_exec(void *f_name)
 	bool success;
 	char *save_ptr;
 
-	// file_name = strtok_r(f_name, " ", &save_ptr);
-
-	// char *token, *save_ptr;
-
-	// for (token = strtok_r(f_name, " ", &save_ptr); token != NULL;
-	// 	 token = strtok_r(NULL, " ", &save_ptr))
-	// 	printf("'%s'\n", token);
-
 	/* We cannot use the intr_frame in the thread structure.
 	 * This is because when current thread rescheduled,
 	 * it stores the execution information to the member. */
@@ -198,7 +193,7 @@ int process_exec(void *f_name)
 	if (!success)
 		return -1;
 
-	hex_dump(_if.rsp, _if.rsp, USER_STACK - _if.rsp, true);
+	// hex_dump(_if.rsp, _if.rsp, USER_STACK - _if.rsp, true);
 
 	/* Start switched process. */
 	do_iret(&_if);
@@ -235,10 +230,12 @@ int process_wait(tid_t child_tid UNUSED)
 void process_exit(void)
 {
 	struct thread *curr = thread_current();
+
 	/* TODO: Your code goes here.
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
+	// printf("exit(%d)", curr->dying_status);
 
 	process_cleanup();
 }
@@ -480,13 +477,9 @@ load(const char *file_name, struct intr_frame *if_)
 	{
 		if_->rsp -= strlen(token) + 1;				 // 내리고
 		strlcpy(if_->rsp, token, strlen(token) + 1); // 채워주고
-		// strlcat(address + ptr_cnt, if_->rsp, 8); // 어디에 넣었는지 포인터 배열에 저장해두기
-		// ptr_cnt += 8;						// 포인터 배열 다음 곳으로
-		address[ptr_cnt] = if_->rsp; // 포인터 배열에 주소 저장
+		address[ptr_cnt] = if_->rsp;				 // 포인터 배열에 주소 저장
 		ptr_cnt++;
 	}
-
-	// dst = (char *)((uintptr_t)dst - (8 - ((uintptr_t)dst % 8))); // dst -= 8 - ((int)(dst % 8)); 이거 던졌더니 gpt가 짜줌
 
 	// 패딩 추가
 	while ((uintptr_t)if_->rsp % 8 != 0)
@@ -498,6 +491,7 @@ load(const char *file_name, struct intr_frame *if_)
 	// 0 추가
 	if_->rsp -= 8;
 	*(char **)if_->rsp = NULL;
+	// printf("%p\n", if_->rsp);
 	// memset()
 	// strlcpy(dst, 0, 8);
 
@@ -512,13 +506,16 @@ load(const char *file_name, struct intr_frame *if_)
 	{
 		if_->rsp -= 8;
 		// memcpy / strlcpy
-		strlcpy(if_->rsp, &address[i], strlen(address[i])); // 주소값을 유저 스택에 추가
-															// *dst = address[i]; // 주소값을 유저 스택에 추가
+		*(char **)if_->rsp = address[i];
+		// strlcpy(if_->rsp, &address[i], 8);
+		// 주소값을 유저 스택에 추가
+		// *dst = address[i]; // 주소값을 유저 스택에 추가
+		// printf("%p\n", if_->rsp);
 	}
 
 	// %rsi = argc , %rdi = argv
-	if_->R.rdi = if_->rsp;
-	if_->R.rsi = ptr_cnt;
+	if_->R.rdi = ptr_cnt;
+	if_->R.rsi = if_->rsp;
 
 	// fake return 추가
 	if_->rsp -= 8;

@@ -100,6 +100,7 @@ struct thread
 	struct lock *waiting_lock; /* 자신이 대기하고 있는 락 */
 	int nice;
 	int recent_cpu;
+	int dying_status;
 
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;	   /* List element. */

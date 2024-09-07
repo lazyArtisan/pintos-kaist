@@ -1,0 +1,30 @@
+FAIL
+Test output failed to match any acceptable form.
+
+Acceptable output:
+  (open-empty) begin
+  (open-empty) end
+  open-empty: exit(0)
+Differences in `diff -u' format:
+- (open-empty) begin
+- (open-empty) end
+- open-empty: exit(0)
++ filename : open-empty
++ 0x4747fff4
++ 0x4747fff3
++ 0x4747fff2
++ 0x4747fff1
++ 0x4747fff0
++ 000000004747ffd0                          00 00 00 00 00 00 00 00 |        ........|
++ 000000004747ffe0  f5 ff 47 47 00 00 00 00-00 00 00 00 00 00 00 00 |..GG............|
++ 000000004747fff0  00 00 00 00 00 6f 70 65-6e 2d 65 6d 70 74 79 00 |.....open-empty.|
++ Page fault at 0x1: not present error reading page in user context.
++ open-empty: dying due to interrupt 0x0e (#PF Page-Fault Exception).
++ Interrupt 0x0e (#PF Page-Fault Exception) at rip=400145
++  cr2=0000000000000001 error=               4
++ rax 0000000000000001 rbx 0000000000000000 rcx 0000000000000000 rdx 0000000000000001
++ rsp 000000004747ffa0 rbp 000000004747ffb0 rsi 0000000000000001 rdi 000000004747ffe0
++ rip 0000000000400145 r8 0000000000000000  r9 0000000000000000 r10 0000000000000000
++ r11 0000000000000000 r12 0000000000000000 r13 0000000000000000 r14 0000000000000000
++ r15 0000000000000000 rflags 00000206
++ es: 001b ds: 001b cs: 0023 ss: 001b

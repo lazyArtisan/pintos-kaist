@@ -1,0 +1,44 @@
+FAIL
+Test output failed to match any acceptable form.
+
+Acceptable output:
+  (args) begin
+  (args) argc = 3
+  (args) argv[0] = 'args-dbl-space'
+  (args) argv[1] = 'two'
+  (args) argv[2] = 'spaces!'
+  (args) argv[3] = null
+  (args) end
+  args-dbl-space: exit(0)
+Differences in `diff -u' format:
++ filename : args-dbl-space
++ 0x4747ffe4
++ 0x4747ffe3
++ 0x4747ffe2
++ 0x4747ffe1
++ 0x4747ffe0
++ 000000004747ffb0                          00 00 00 00 00 00 00 00 |        ........|
++ 000000004747ffc0  f1 ff 47 47 00 00 00 00-ed ff 47 47 00 00 00 00 |..GG......GG....|
++ 000000004747ffd0  e5 ff 47 47 00 00 00 00-00 00 00 00 00 00 00 00 |..GG............|
++ 000000004747ffe0  00 00 00 00 00 73 70 61-63 65 73 21 00 74 77 6f |.....spaces!.two|
++ 000000004747fff0  00 61 72 67 73 2d 64 62-6c 2d 73 70 61 63 65 00 |.args-dbl-space.|
++ (args) argv and stack must be word-aligned, actually 0x3
+  (args) begin
+- (args) argc = 3
+- (args) argv[0] = 'args-dbl-space'
+- (args) argv[1] = 'two'
+- (args) argv[2] = 'spaces!'
+- (args) argv[3] = null
+- (args) end
+- args-dbl-space: exit(0)
++ (args) argc = 1195900864
++ Page fault at 0x3: not present error reading page in user context.
++ args-dbl-space : dying due to interrupt 0x0e (#PF Page-Fault Exception).
++ Interrupt 0x0e (#PF Page-Fault Exception) at rip=400194
++  cr2=0000000000000003 error=               4
++ rax 0000000000000003 rbx 0000000000000000 rcx 000000000040384a rdx 0000000000000000
++ rsp 000000004747ff70 rbp 000000004747ff90 rsi 0000000000604d40 rdi 0000000000000001
++ rip 0000000000400194 r8 0000000000000000  r9 0000000000000000 r10 0000000000000000
++ r11 0000000000000206 r12 0000000000000000 r13 0000000000000000 r14 0000000000000000
++ r15 0000000000000000 rflags 00000206
++ es: 001b ds: 001b cs: 0023 ss: 001b
