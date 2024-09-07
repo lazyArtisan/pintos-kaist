@@ -10,4 +10,5 @@ userprog/syscall.o: ../../userprog/syscall.c \
  ../../include/intrinsic.h ../../include/threads/mmu.h \
  ../../include/threads/pte.h ../../include/threads/vaddr.h \
  ../../include/threads/init.h ../../include/userprog/process.h \
- ../../include/lib/string.h
+ ../../include/lib/string.h ../../include/filesys/filesys.h \
+ ../../include/filesys/off_t.h ../../include/threads/vaddr.h

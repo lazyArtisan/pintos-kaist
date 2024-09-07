@@ -359,7 +359,6 @@ load(const char *file_name, struct intr_frame *if_)
 	char *only_file_name;
 
 	only_file_name = strtok_r(file_name, " ", &save_ptr);
-	// printf("filename : %s\n", only_file_name);
 
 	/* Allocate and activate page directory. */
 	t->pml4 = pml4_create();

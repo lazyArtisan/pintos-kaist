@@ -10,6 +10,8 @@
 #include "threads/init.h"
 #include "userprog/process.h"
 #include "lib/string.h"
+#include "filesys/filesys.h"
+#include "include/threads/vaddr.h"
 
 void syscall_entry(void);
 void syscall_handler(struct intr_frame *);
@@ -41,6 +43,24 @@ typedef int off_t;
 #define MSR_STAR 0xc0000081			/* Segment selector msr */
 #define MSR_LSTAR 0xc0000082		/* Long mode SYSCALL target */
 #define MSR_SYSCALL_MASK 0xc0000084 /* Mask for the eflags */
+
+/* Projects 2 and later. */
+void halt(void) NO_RETURN;
+void exit(int status) NO_RETURN;
+pid_t fork(const char *thread_name);
+int exec(const char *file);
+int wait(pid_t);
+bool create(const char *file, unsigned initial_size);
+bool remove(const char *file);
+int open(const char *file);
+int filesize(int fd);
+int read(int fd, void *buffer, unsigned length);
+int write(int fd, const void *buffer, unsigned length);
+void seek(int fd, unsigned position);
+unsigned tell(int fd);
+void close(int fd);
+
+int dup2(int oldfd, int newfd);
 
 void syscall_init(void)
 {
@@ -83,7 +103,7 @@ void syscall_handler(struct intr_frame *f)
 		halt();
 		break;
 	case SYS_CREATE:
-		halt();
+		f->R.rax = create(f->R.rdi, f->R.rsi);
 		break;
 	case SYS_REMOVE:
 		halt();
@@ -135,7 +155,7 @@ void exit(int status)
 /* THREAD_NAME이라는 이름을 가진 현재 프로세스의 복제본인 새 프로세스를 만듭니다. */
 pid_t fork(const char *thread_name)
 {
-	process_fork(thread_name, &thread_current()->tf);
+	return process_fork(thread_name, &thread_current()->tf);
 }
 
 /* 현재의 프로세스가 cmd_line에서 이름이 주어지는 실행가능한 프로세스로 변경됩니다. */
@@ -151,6 +171,10 @@ int wait(pid_t pid)
 /*  file(첫 번째 인자)를 이름으로 하고 크기가 initial_size(두 번째 인자)인 새로운 파일을 생성합니다 */
 bool create(const char *file, unsigned initial_size)
 {
+	if (file == NULL || pml4_get_page(thread_current()->pml4, file) == NULL || !is_user_vaddr(file) || strlen(file) == 0)
+		exit(-1);
+
+	return filesys_create(file, initial_size);
 }
 
 /* file(첫 번째)라는 이름을 가진 파일을 삭제합니다.  */
