@@ -12,24 +12,14 @@ Formatting file system...done.
 Boot complete.
 Putting 'rox-simple' into the file system...
 Executing 'rox-simple':
-filename : rox-simple
-Page fault at 0x1: not present error reading page in user context.
-rox-simple: dying due to interrupt 0x0e (#PF Page-Fault Exception).
-Interrupt 0x0e (#PF Page-Fault Exception) at rip=40020a
- cr2=0000000000000001 error=               4
-rax 0000000000000001 rbx 0000000000000000 rcx 0000000000000000 rdx 0000000000000001
-rsp 000000004747ffa0 rbp 000000004747ffb0 rsi 0000000000000001 rdi 000000004747ffe0
-rip 000000000040020a r8 0000000000000000  r9 0000000000000000 r10 0000000000000000
-r11 0000000000000000 r12 0000000000000000 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000206
-es: 001b ds: 001b cs: 0023 ss: 001b
-Execution of 'rox-simple' complete.
-Timer: 461 ticks
-Thread: 50 idle ticks, 409 kernel ticks, 3 user ticks
+(rox-simple) begin
+(rox-simple) open "rox-simple"
+Timer: 281 ticks
+Thread: 57 idle ticks, 223 kernel ticks, 1 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 80 reads, 234 writes
 hd1:0: 103 reads, 0 writes
-Console: 1459 characters output
+Console: 807 characters output
 Keyboard: 0 keys pressed
-Exception: 1 page faults
+Exception: 0 page faults
 Powering off...

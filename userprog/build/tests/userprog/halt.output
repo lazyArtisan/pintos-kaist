@@ -4,7 +4,7 @@ Kernel command line: -q -f put halt run halt
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  104,755,200 loops/s.
+Calibrating timer...  107,110,400 loops/s.
 hd0:0: detected 313 sector (156 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 102 sector (51 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -12,29 +12,13 @@ Formatting file system...done.
 Boot complete.
 Putting 'halt' into the file system...
 Executing 'halt':
-filename : halt
-0x4747fffa
-0x4747fff9
-0x4747fff8
-000000004747ffe0  00 00 00 00 00 00 00 00-fb ff 47 47 00 00 00 00 |..........GG....|
-000000004747fff0  00 00 00 00 00 00 00 00-00 00 00 68 61 6c 74 00 |...........halt.|
-Page fault at 0x1: not present error reading page in user context.
-halt: dying due to interrupt 0x0e (#PF Page-Fault Exception).
-Interrupt 0x0e (#PF Page-Fault Exception) at rip=40010b
- cr2=0000000000000001 error=               4
-rax 0000000000000001 rbx 0000000000000000 rcx 0000000000000000 rdx 0000000000000001
-rsp 000000004747ffa8 rbp 000000004747ffb8 rsi 0000000000000001 rdi 000000004747ffe8
-rip 000000000040010b r8 0000000000000000  r9 0000000000000000 r10 0000000000000000
-r11 0000000000000000 r12 0000000000000000 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000202
-es: 001b ds: 001b cs: 0023 ss: 001b
-Execution of 'halt' complete.
-Timer: 519 ticks
-Thread: 56 idle ticks, 459 kernel ticks, 4 user ticks
+(halt) begin
+Timer: 278 ticks
+Thread: 48 idle ticks, 230 kernel ticks, 0 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 80 reads, 232 writes
 hd1:0: 102 reads, 0 writes
-Console: 1621 characters output
+Console: 747 characters output
 Keyboard: 0 keys pressed
-Exception: 1 page faults
+Exception: 0 page faults
 Powering off...

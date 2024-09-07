@@ -4,7 +4,7 @@ Kernel command line: -q -f put rox-multichild put child-rox run rox-multichild
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  107,929,600 loops/s.
+Calibrating timer...  114,483,200 loops/s.
 hd0:0: detected 313 sector (156 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 220 sector (110 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -13,24 +13,14 @@ Boot complete.
 Putting 'rox-multichild' into the file system...
 Putting 'child-rox' into the file system...
 Executing 'rox-multichild':
-filename : rox-multichild
-Page fault at 0x1: not present error reading page in user context.
-rox-multichild: dying due to interrupt 0x0e (#PF Page-Fault Exception).
-Interrupt 0x0e (#PF Page-Fault Exception) at rip=40037d
- cr2=0000000000000001 error=               4
-rax 0000000000000001 rbx 0000000000000000 rcx 0000000000000000 rdx 0000000000000001
-rsp 000000004747ffa0 rbp 000000004747ffb0 rsi 0000000000000001 rdi 000000004747ffe0
-rip 000000000040037d r8 0000000000000000  r9 0000000000000000 r10 0000000000000000
-r11 0000000000000000 r12 0000000000000000 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000206
-es: 001b ds: 001b cs: 0023 ss: 001b
-Execution of 'rox-multichild' complete.
-Timer: 514 ticks
-Thread: 78 idle ticks, 432 kernel ticks, 4 user ticks
+(rox-multichild) begin
+(rox-multichild) open "child-rox"
+Timer: 307 ticks
+Thread: 73 idle ticks, 233 kernel ticks, 1 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 108 reads, 478 writes
 hd1:0: 220 reads, 0 writes
-Console: 1548 characters output
+Console: 891 characters output
 Keyboard: 0 keys pressed
-Exception: 1 page faults
+Exception: 0 page faults
 Powering off...

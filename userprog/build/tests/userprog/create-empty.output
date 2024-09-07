@@ -4,7 +4,7 @@ Kernel command line: -q -f put create-empty run create-empty
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  104,857,600 loops/s.
+Calibrating timer...  105,472,000 loops/s.
 hd0:0: detected 313 sector (156 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 102 sector (51 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -12,30 +12,13 @@ Formatting file system...done.
 Boot complete.
 Putting 'create-empty' into the file system...
 Executing 'create-empty':
-filename : create-empty
-0x4747fff2
-0x4747fff1
-0x4747fff0
-000000004747ffd0                          00 00 00 00 00 00 00 00 |        ........|
-000000004747ffe0  f3 ff 47 47 00 00 00 00-00 00 00 00 00 00 00 00 |..GG............|
-000000004747fff0  00 00 00 63 72 65 61 74-65 2d 65 6d 70 74 79 00 |...create-empty.|
-Page fault at 0x1: not present error reading page in user context.
-create-empty: dying due to interrupt 0x0e (#PF Page-Fault Exception).
-Interrupt 0x0e (#PF Page-Fault Exception) at rip=40013d
- cr2=0000000000000001 error=               4
-rax 0000000000000001 rbx 0000000000000000 rcx 0000000000000000 rdx 0000000000000001
-rsp 000000004747ffa0 rbp 000000004747ffb0 rsi 0000000000000001 rdi 000000004747ffe0
-rip 000000000040013d r8 0000000000000000  r9 0000000000000000 r10 0000000000000000
-r11 0000000000000000 r12 0000000000000000 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000206
-es: 001b ds: 001b cs: 0023 ss: 001b
-Execution of 'create-empty' complete.
-Timer: 550 ticks
-Thread: 69 idle ticks, 474 kernel ticks, 8 user ticks
+(create-empty) begin
+Timer: 293 ticks
+Thread: 65 idle ticks, 228 kernel ticks, 0 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 80 reads, 232 writes
 hd1:0: 102 reads, 0 writes
-Console: 1762 characters output
+Console: 787 characters output
 Keyboard: 0 keys pressed
-Exception: 1 page faults
+Exception: 0 page faults
 Powering off...

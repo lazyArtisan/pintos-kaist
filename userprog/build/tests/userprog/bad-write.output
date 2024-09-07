@@ -4,7 +4,7 @@ Kernel command line: -q -f put bad-write run bad-write
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  53,145,600 loops/s.
+Calibrating timer...  117,760,000 loops/s.
 hd0:0: detected 313 sector (156 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 102 sector (51 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -12,24 +12,24 @@ Formatting file system...done.
 Boot complete.
 Putting 'bad-write' into the file system...
 Executing 'bad-write':
-filename : bad-write
-Page fault at 0x1: not present error reading page in user context.
+(bad-write) begin
+Page fault at 0: not present error writing page in user context.
 bad-write: dying due to interrupt 0x0e (#PF Page-Fault Exception).
-Interrupt 0x0e (#PF Page-Fault Exception) at rip=400125
- cr2=0000000000000001 error=               4
-rax 0000000000000001 rbx 0000000000000000 rcx 0000000000000000 rdx 0000000000000001
-rsp 000000004747ffa0 rbp 000000004747ffb0 rsi 0000000000000001 rdi 000000004747ffe0
-rip 0000000000400125 r8 0000000000000000  r9 0000000000000000 r10 0000000000000000
-r11 0000000000000000 r12 0000000000000000 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000206
+Interrupt 0x0e (#PF Page-Fault Exception) at rip=4000f1
+ cr2=0000000000000000 error=               6
+rax 0000000000000000 rbx 0000000000000000 rcx 00000000000000ff rdx 0000000000000000
+rsp 000000004747ff90 rbp 000000004747ff90 rsi 000000000060508e rdi 000000000060517f
+rip 00000000004000f1 r8 0000000000000000  r9 0000000000000000 r10 0000000000000000
+r11 0000000000000206 r12 0000000000000000 r13 0000000000000000 r14 0000000000000000
+r15 0000000000000000 rflags 00000212
 es: 001b ds: 001b cs: 0023 ss: 001b
 Execution of 'bad-write' complete.
-Timer: 486 ticks
-Thread: 58 idle ticks, 426 kernel ticks, 2 user ticks
+Timer: 497 ticks
+Thread: 72 idle ticks, 422 kernel ticks, 3 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 80 reads, 232 writes
 hd1:0: 102 reads, 0 writes
-Console: 1452 characters output
+Console: 1448 characters output
 Keyboard: 0 keys pressed
 Exception: 1 page faults
 Powering off...
