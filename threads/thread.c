@@ -254,6 +254,14 @@ tid_t thread_create(const char *name, int priority,
 	/* Add to run queue. */
 	thread_unblock(t);
 
+#ifdef USERPROG
+	t->fdt = malloc(64 * sizeof(struct file *));   // 동적 할당 (없어지지 말라고)
+	memset(t->fdt, 0, 64 * sizeof(struct file *)); // 모든 포인터를 0으로 초기화 // t->fdt = {0};, memset(&t->fdt, 0, 64); 쓰면 안됨
+	t->fdt[0] = STDIN_FILENO;					   // 있는 척하기
+	t->fdt[1] = STDOUT_FILENO;					   // 있는 척하기
+	t->next_fd = 2;
+#endif
+
 	check_priority_and_yield();
 
 	return tid;
@@ -334,6 +342,8 @@ void thread_exit(void)
 	ASSERT(!intr_context());
 
 #ifdef USERPROG
+	// 모든 파일 close 해줘야됨
+	free(thread_current()->fdt);
 	process_exit();
 #endif
 

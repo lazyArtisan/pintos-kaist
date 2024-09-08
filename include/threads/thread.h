@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "threads/interrupt.h"
 #include "threads/synch.h"
+#include "filesys/file.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -101,6 +102,8 @@ struct thread
 	int nice;
 	int recent_cpu;
 	int dying_status;
+	struct file **fdt; /* 파일 디스크립터 테이블 */
+	int next_fd;	   /* 다음에 할당할 파일 디스크립터 번호 */
 
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;	   /* List element. */

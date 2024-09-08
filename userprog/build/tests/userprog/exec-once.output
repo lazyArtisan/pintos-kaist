@@ -15,8 +15,8 @@ Putting 'child-simple' into the file system...
 Executing 'exec-once':
 (exec-once) begin
 (exec-once) I'm your father
-Timer: 279 ticks
-Thread: 64 idle ticks, 215 kernel ticks, 1 user ticks
+Timer: 299 ticks
+Thread: 77 idle ticks, 222 kernel ticks, 1 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 107 reads, 444 writes
 hd1:0: 203 reads, 0 writes

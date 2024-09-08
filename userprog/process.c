@@ -496,12 +496,6 @@ load(const char *file_name, struct intr_frame *if_)
 	// strlcpy(dst, 0, 8);
 
 	// 유저 스택에 주소값들 추가
-	// for (token = strtok_r(address, " ", &save_ptr); token != NULL;
-	// 	 token = strtok_r(NULL, " ", &save_ptr))
-	// {
-	// 	dst -= strlen(token);
-	// 	strlcpy(dst, token, strlen(token));
-	// }
 	for (int i = ptr_cnt - 1; i >= 0; i--)
 	{
 		if_->rsp -= 8;

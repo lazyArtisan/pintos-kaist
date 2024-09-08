@@ -19,8 +19,8 @@ Executing 'write-normal':
 (write-normal) write() returned 10 instead of 373: FAILED
 write-normal: exit(1)
 Execution of 'write-normal' complete.
-Timer: 508 ticks
-Thread: 65 idle ticks, 442 kernel ticks, 1 user ticks
+Timer: 518 ticks
+Thread: 67 idle ticks, 451 kernel ticks, 1 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 143 reads, 265 writes
 hd1:0: 107 reads, 0 writes
