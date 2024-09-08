@@ -62,16 +62,6 @@ bool filesys_create(const char *name, off_t initial_size)
 	if (strlen(name) > 50)
 		return 0;
 
-	struct dir *dir_test = dir_open_root();
-	struct inode *inode = NULL;
-
-	if (dir_test != NULL && dir_lookup(dir_test, name, &inode))
-	{
-		dir_close(dir_test);
-		return false;
-	}
-	dir_close(dir_test);
-
 	disk_sector_t inode_sector = 0;
 	struct dir *dir = dir_open_root();
 
@@ -80,8 +70,6 @@ bool filesys_create(const char *name, off_t initial_size)
 	if (!success && inode_sector != 0)
 		free_map_release(inode_sector, 1);
 	dir_close(dir);
-
-	// printf("%s는 성공적으로 만들어졌어요.\n", name);
 
 	return success;
 }
@@ -100,6 +88,9 @@ filesys_open(const char *name)
 	if (dir != NULL)
 		dir_lookup(dir, name, &inode);
 	dir_close(dir);
+
+	if (inode == NULL)
+		return -1;
 
 	return file_open(inode);
 }

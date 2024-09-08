@@ -215,11 +215,11 @@ int process_wait(tid_t child_tid UNUSED)
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
 	int i = 0;
-	while (i <= 1 << 30)
+	while (i <= 1 << 29)
 		i++;
-	i = 0;
-	while (i <= 1 << 30)
-		i++;
+	// i = 0;
+	// while (i <= 1 << 30)
+	// 	i++;
 	// while (1)
 	// {
 	// }

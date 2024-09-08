@@ -1,2 +1,2 @@
 FAIL
-Run started 'write-bad-ptr' but it never finished
+run: should have exited with -1: FAILED

@@ -1,2 +1,2 @@
 FAIL
-Run started 'write-zero' but it never finished
+run: write() returned 10 instead of 0: FAILED

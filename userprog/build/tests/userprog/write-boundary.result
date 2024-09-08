@@ -1,2 +1,2 @@
 FAIL
-Run started 'write-boundary' but it never finished
+run: write() returned 10 instead of 373: FAILED

@@ -44,6 +44,8 @@ typedef int off_t;
 #define MSR_LSTAR 0xc0000082		/* Long mode SYSCALL target */
 #define MSR_SYSCALL_MASK 0xc0000084 /* Mask for the eflags */
 
+bool check_ptr(char *ptr);
+
 /* Projects 2 and later. */
 void halt(void) NO_RETURN;
 void exit(int status) NO_RETURN;
@@ -94,7 +96,7 @@ void syscall_handler(struct intr_frame *f)
 		exit(f->R.rdi);
 		break;
 	case SYS_FORK:
-		fork(f->R.rdi);
+		f->R.rax = fork(f->R.rdi);
 		break;
 	case SYS_EXEC:
 		halt();
@@ -109,7 +111,7 @@ void syscall_handler(struct intr_frame *f)
 		halt();
 		break;
 	case SYS_OPEN:
-		halt();
+		f->R.rax = open(f->R.rdi);
 		break;
 	case SYS_FILESIZE:
 		halt();
@@ -133,8 +135,6 @@ void syscall_handler(struct intr_frame *f)
 	default:
 		break;
 	}
-
-	// thread_exit();
 }
 
 // power_off()를 호출해서 Pintos를 종료합니다.
@@ -148,7 +148,6 @@ void exit(int status)
 {
 	printf("%s: exit(%d)\n", thread_name(), status);
 	thread_current()->dying_status = status;
-	// printf("exit(%d)", status);
 	thread_exit();
 }
 
@@ -185,6 +184,13 @@ bool remove(const char *file)
 /* file(첫 번째 인자)이라는 이름을 가진 파일을 엽니다. */
 int open(const char *file)
 {
+	if (file == NULL || pml4_get_page(thread_current()->pml4, file) == NULL || !is_user_vaddr(file))
+		exit(-1);
+
+	if (strlen(file) == 0)
+		return -1;
+
+	return filesys_open(file);
 }
 
 /* fd(첫 번째 인자)로서 열려 있는 파일의 크기가 몇 바이트인지 반환합니다. */
@@ -222,4 +228,12 @@ void close(int fd)
 
 int dup2(int oldfd, int newfd)
 {
+}
+
+/* 포인터 유효성 체크하는 함수. wait 구현하고 다시 해볼 것. */
+bool check_ptr(char *ptr)
+{
+	if (ptr == NULL || pml4_get_page(thread_current()->pml4, ptr) == NULL || !is_user_vaddr(ptr))
+		return false;
+	return true;
 }
