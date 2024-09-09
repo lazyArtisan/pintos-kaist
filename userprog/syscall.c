@@ -181,6 +181,21 @@ bool remove(const char *file)
 {
 }
 
+int find_next_fd(struct thread *t)
+{
+	struct file **fdt = t->fdt;
+
+	for (int i = 2; i < 64; i++)
+	{
+		if (fdt[i] == NULL)
+		{
+			t->next_fd = i;
+			return i;
+		}
+	}
+	return -1; // 64개나 채울 일이? 일단 처리는 해둠.
+}
+
 /* file(첫 번째 인자)이라는 이름을 가진 파일을 엽니다. */
 int open(const char *file)
 {
@@ -190,7 +205,18 @@ int open(const char *file)
 	if (strlen(file) == 0)
 		return -1;
 
-	return filesys_open(file);
+	struct file *real_file = filesys_open(file);
+
+	// 파일 디스크립터 테이블에 해당 파일을 추가해야 함
+	struct thread *t = thread_current();
+	if (t->fdt != NULL)
+	{
+		struct file **fdt = t->fdt;
+		fdt[t->next_fd] = real_file;
+		find_next_fd(t);
+	}
+
+	return;
 }
 
 /* fd(첫 번째 인자)로서 열려 있는 파일의 크기가 몇 바이트인지 반환합니다. */
@@ -224,6 +250,9 @@ unsigned tell(int fd)
 /* 파일 식별자 fd를 닫습니다. */
 void close(int fd)
 {
+	// 파일 디스크립터 테이블에서 fd에 할당된 file 구조체를 찾은 뒤에 일단 저장한 뒤
+	// 해당 file 구조체를 테이블에서 삭제하고
+	// file 구조체로 file_close 호출
 }
 
 int dup2(int oldfd, int newfd)

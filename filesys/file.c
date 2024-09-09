@@ -12,21 +12,6 @@ struct file
 	bool deny_write;	 /* Has file_deny_write() been called? */
 };
 
-int find_next_fd(struct thread *t)
-{
-	struct file **fdt = t->fdt;
-
-	for (int i = 2; i < 64; i++)
-	{
-		if (fdt[i] == NULL)
-		{
-			t->next_fd = i;
-			return i;
-		}
-	}
-	return -1; // 64개나 채울 일이? 일단 처리는 해둠.
-}
-
 /* Opens a file for the given INODE, of which it takes ownership,
  * and returns the new file.  Returns a null pointer if an
  * allocation fails or if INODE is null. */
@@ -39,15 +24,6 @@ file_open(struct inode *inode)
 		file->inode = inode;
 		file->pos = 0;
 		file->deny_write = false;
-
-		// 파일 디스크립터 테이블에 해당 파일을 추가해야 함
-		struct thread *t = thread_current();
-		if (t->fdt != NULL)
-		{
-			struct file **fdt = t->fdt;
-			fdt[t->next_fd] = file;
-			find_next_fd(t);
-		}
 
 		return file;
 	}
