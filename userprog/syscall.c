@@ -129,7 +129,7 @@ void syscall_handler(struct intr_frame *f)
 		halt();
 		break;
 	case SYS_CLOSE:
-		halt();
+		close(f->R.rdi);
 		break;
 
 	default:
@@ -255,6 +255,9 @@ unsigned tell(int fd)
 /* 파일 식별자 fd를 닫습니다. */
 void close(int fd)
 {
+	if (fd < 0 || 64 <= fd)
+		return;
+
 	// 파일 디스크립터 테이블에서 fd에 할당된 file 구조체를 찾은 뒤에 일단 저장한 뒤
 	// 해당 file 구조체를 테이블에서 삭제하고
 	// file 구조체로 file_close 호출
