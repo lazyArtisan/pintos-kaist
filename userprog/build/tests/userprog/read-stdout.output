@@ -4,8 +4,8 @@ Kernel command line: -q -f put read-stdout run read-stdout
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  111,001,600 loops/s.
-hd0:0: detected 313 sector (156 kB) disk, model "QEMU HARDDISK", serial "QM00001"
+Calibrating timer...  111,206,400 loops/s.
+hd0:0: detected 321 sector (160 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 102 sector (51 kB) disk, model "QEMU HARDDISK", serial "QM00003"
 Formatting file system...done.
@@ -13,12 +13,24 @@ Boot complete.
 Putting 'read-stdout' into the file system...
 Executing 'read-stdout':
 (read-stdout) begin
+Page fault at 0x9: not present error reading page in kernel context.
+Interrupt 0x0e (#PF Page-Fault Exception) at rip=800421eb1b
+ cr2=0000000000000009 error=               0
+rax 0000000000000001 rbx 0000000000000000 rcx 000000004747ff8f rdx 0000000000000001
+rsp 0000008004241ea0 rbp 0000008004241ed0 rsi 000000004747ff8f rdi 0000000000000001
+rip 000000800421eb1b r8 0000000000000000  r9 0000000000000000 r10 0000000000000000
+r11 0000000000000202 r12 000000800421d046 r13 0000000000000000 r14 0000000000000000
+r15 0000000000000000 rflags 00000206
+es: 001b ds: 001b cs: 0008 ss: 0010
+Kernel PANIC at ../../userprog/exception.c:97 in kill(): Kernel bug - unexpected interrupt in kernel
+Call stack: 0x800421847f 0x800421cd91 0x800421cf10 0x8004208fbf 0x80042093dd 0x800421d580 0x800421d185 0x800421cf85 0x40010d 0x40016b 0x400c0c.
+The `backtrace' program can make call stacks useful.
+Read "Backtraces" in the "Debugging Tools" chapter
+of the Pintos documentation for more information.
 Timer: 285 ticks
-Thread: 45 idle ticks, 237 kernel ticks, 3 user ticks
+Thread: 65 idle ticks, 218 kernel ticks, 2 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 80 reads, 232 writes
 hd1:0: 102 reads, 0 writes
-Console: 782 characters output
-Keyboard: 0 keys pressed
-Exception: 0 page faults
-Powering off...
+Console: 1763 characters output
+Key

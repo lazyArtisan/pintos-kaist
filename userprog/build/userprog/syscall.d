@@ -12,4 +12,4 @@ userprog/syscall.o: ../../userprog/syscall.c \
  ../../include/threads/pte.h ../../include/threads/vaddr.h \
  ../../include/threads/init.h ../../include/userprog/process.h \
  ../../include/lib/string.h ../../include/filesys/filesys.h \
- ../../include/threads/vaddr.h
+ ../../include/threads/vaddr.h ../../include/devices/input.h

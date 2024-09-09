@@ -1,2 +1,15 @@
 FAIL
-Run started 'read-stdout' but it never finished
+Kernel panic in run: PANIC at ../../userprog/exception.c:97 in kill(): Kernel bug - unexpected interrupt in kernel
+Call stack: 0x800421847f 0x800421cd91 0x800421cf10 0x8004208fbf 0x80042093dd 0x800421d580 0x800421d185 0x800421cf85 0x40010d 0x40016b 0x400c0c
+Translation of call stack:
+0x000000800421847f: debug_panic (lib/kernel/debug.c:32)
+0x000000800421cd91: kill (userprog/exception.c:103)
+0x000000800421cf10: page_fault (userprog/exception.c:159 (discriminator 12))
+0x0000008004208fbf: intr_handler (threads/interrupt.c:352)
+0x00000080042093dd: intr_entry (threads/intr-stubs.o:?)
+0x000000800421d580: read (userprog/syscall.c:243)
+0x000000800421d185: syscall_handler (userprog/syscall.c:120)
+0x000000800421cf85: no_sti (userprog/syscall-entry.o:?)
+0x000000000040010d: (unknown)
+0x000000000040016b: (unknown)
+0x0000000000400c0c: (unknown)

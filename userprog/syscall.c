@@ -12,6 +12,7 @@
 #include "lib/string.h"
 #include "filesys/filesys.h"
 #include "include/threads/vaddr.h"
+#include "devices/input.h"
 
 void syscall_entry(void);
 void syscall_handler(struct intr_frame *);
@@ -117,7 +118,7 @@ void syscall_handler(struct intr_frame *f)
 		halt();
 		break;
 	case SYS_READ:
-		halt();
+		f->R.rax = read(f->R.rdi, f->R.rsi, f->R.rdx);
 		break;
 	case SYS_WRITE:
 		write(f->R.rdi, f->R.rsi, f->R.rdx);
@@ -229,9 +230,17 @@ int filesize(int fd)
 {
 }
 
-/* buffer 안에 fd 로 열려있는 파일로부터 size 바이트를 읽습니다. */
+/* fd로 열린 파일에서 size 바이트만큼 읽어서 buffer에 넣는다 */
 int read(int fd, void *buffer, unsigned length)
 {
+	if (fd < 0 || 64 <= fd || pml4_get_page(thread_current()->pml4, buffer) == NULL || !is_user_vaddr(buffer))
+		exit(-1);
+
+	// fd에서 file 꺼내와서 file_read에 넣어준다
+	struct file *file;
+	file = thread_current()->fdt[fd];
+
+	return file_read(file, buffer, length);
 }
 
 /* buffer로부터 open file fd로 size 바이트를 적어줍니다. */
