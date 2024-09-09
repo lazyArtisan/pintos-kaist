@@ -115,7 +115,7 @@ void syscall_handler(struct intr_frame *f)
 		f->R.rax = open(f->R.rdi);
 		break;
 	case SYS_FILESIZE:
-		halt();
+		f->R.rax = filesize(f->R.rdi);
 		break;
 	case SYS_READ:
 		f->R.rax = read(f->R.rdi, f->R.rsi, f->R.rdx);
@@ -228,18 +228,19 @@ int open(const char *file)
 /* fd(첫 번째 인자)로서 열려 있는 파일의 크기가 몇 바이트인지 반환합니다. */
 int filesize(int fd)
 {
+	struct file *file = thread_current()->fdt[fd];
+
+	return file_length(file);
 }
 
 /* fd로 열린 파일에서 size 바이트만큼 읽어서 buffer에 넣는다 */
 int read(int fd, void *buffer, unsigned length)
 {
-	if (fd < 0 || 64 <= fd || pml4_get_page(thread_current()->pml4, buffer) == NULL || !is_user_vaddr(buffer))
+	if (fd < 0 || 64 <= fd || fd == 1 || pml4_get_page(thread_current()->pml4, buffer) == NULL || !is_user_vaddr(buffer))
 		exit(-1);
 
 	// fd에서 file 꺼내와서 file_read에 넣어준다
-	struct file *file;
-	file = thread_current()->fdt[fd];
-
+	struct file *file = thread_current()->fdt[fd];
 	return file_read(file, buffer, length);
 }
 

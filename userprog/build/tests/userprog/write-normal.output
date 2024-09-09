@@ -1,4 +1,4 @@
-Kernel command line: -q -f put open-boundary put sample.txt run open-boundary
+Kernel command line: -q -f put write-normal put sample.txt run write-normal
 0 ~ 9fc00 1
 100000 ~ 13e0000 1
 Pintos booting with: 
@@ -10,20 +10,21 @@ hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM0000
 hd1:0: detected 107 sector (53 kB) disk, model "QEMU HARDDISK", serial "QM00003"
 Formatting file system...done.
 Boot complete.
-Putting 'open-boundary' into the file system...
+Putting 'write-normal' into the file system...
 Putting 'sample.txt' into the file system...
-Executing 'open-boundary':
-(open-boundary) begin
-(open-boundary) open "sample.txt"
-(open-boundary) end
-open-boundary: exit(0)
-Execution of 'open-boundary' complete.
-Timer: 482 ticks
-Thread: 65 idle ticks, 416 kernel ticks, 1 user ticks
+Executing 'write-normal':
+(write-normal) begin
+(write-normal) create "test.txt"
+(write-normal) open "test.txt"
+(write-normal) write() returned 10 instead of 373: FAILED
+write-normal: exit(1)
+Execution of 'write-normal' complete.
+Timer: 477 ticks
+Thread: 51 idle ticks, 426 kernel ticks, 1 user ticks
 hd0:0: 0 reads, 0 writes
-hd0:1: 111 reads, 252 writes
+hd0:1: 143 reads, 265 writes
 hd1:0: 107 reads, 0 writes
-Console: 969 characters output
+Console: 1030 characters output
 Keyboard: 0 keys pressed
 Exception: 0 page faults
 Powering off...
