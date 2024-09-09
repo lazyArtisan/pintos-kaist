@@ -208,15 +208,17 @@ int open(const char *file)
 	struct file *real_file = filesys_open(file);
 
 	// 파일 디스크립터 테이블에 해당 파일을 추가해야 함
+	int return_fd = -1;
 	struct thread *t = thread_current();
 	if (t->fdt != NULL)
 	{
 		struct file **fdt = t->fdt;
 		fdt[t->next_fd] = real_file;
+		return_fd = t->next_fd;
 		find_next_fd(t);
 	}
 
-	return;
+	return return_fd;
 }
 
 /* fd(첫 번째 인자)로서 열려 있는 파일의 크기가 몇 바이트인지 반환합니다. */
