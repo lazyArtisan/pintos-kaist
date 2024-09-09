@@ -207,6 +207,9 @@ int open(const char *file)
 
 	struct file *real_file = filesys_open(file);
 
+	if (real_file == -1)
+		return -1;
+
 	// 파일 디스크립터 테이블에 해당 파일을 추가해야 함
 	int return_fd = -1;
 	struct thread *t = thread_current();
@@ -255,6 +258,14 @@ void close(int fd)
 	// 파일 디스크립터 테이블에서 fd에 할당된 file 구조체를 찾은 뒤에 일단 저장한 뒤
 	// 해당 file 구조체를 테이블에서 삭제하고
 	// file 구조체로 file_close 호출
+
+	struct thread *t = thread_current();
+	struct file **fdt = t->fdt;
+	struct file *file = fdt[fd]; // fd에 할당된 file 구조체
+
+	fdt[fd] = NULL; // 테이블에서 삭제
+
+	file_close(file);
 }
 
 int dup2(int oldfd, int newfd)
