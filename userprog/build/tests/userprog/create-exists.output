@@ -16,10 +16,10 @@ Executing 'create-exists':
 (create-exists) create quux.dat
 (create-exists) create warble.dat
 Execution of 'create-exists' complete.
-Timer: 483 ticks
-Thread: 45 idle ticks, 437 kernel ticks, 1 user ticks
+Timer: 528 ticks
+Thread: 60 idle ticks, 466 kernel ticks, 2 user ticks
 hd0:0: 0 reads, 0 writes
-hd0:1: 109 reads, 259 writes
+hd0:1: 115 reads, 259 writes
 hd1:0: 104 reads, 0 writes
 Console: 898 characters output
 Keyboard: 0 keys pressed

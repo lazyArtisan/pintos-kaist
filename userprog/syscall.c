@@ -121,7 +121,7 @@ void syscall_handler(struct intr_frame *f)
 		f->R.rax = read(f->R.rdi, f->R.rsi, f->R.rdx);
 		break;
 	case SYS_WRITE:
-		write(f->R.rdi, f->R.rsi, f->R.rdx);
+		f->R.rax = write(f->R.rdi, f->R.rsi, f->R.rdx);
 		break;
 	case SYS_SEEK:
 		halt();
@@ -247,9 +247,19 @@ int read(int fd, void *buffer, unsigned length)
 /* buffer로부터 open file fd로 size 바이트를 적어줍니다. */
 int write(int fd, const void *buffer, unsigned length)
 {
+	if (fd < 0 || 64 <= fd || fd == 0 || pml4_get_page(thread_current()->pml4, buffer) == NULL || !is_user_vaddr(buffer))
+		exit(-1);
+
 	// strlcpy(fd, buffer, length);
 	if (fd == 1)
+	{
 		putbuf(buffer, length);
+		return length;
+	}
+
+	struct file *file = thread_current()->fdt[fd];
+
+	return file_write_at(file, buffer, length, 0);
 }
 
 /* open file fd에서 읽거나 쓸 다음 바이트를 position으로 변경합니다. */
