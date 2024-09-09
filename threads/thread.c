@@ -343,14 +343,14 @@ void thread_exit(void)
 
 #ifdef USERPROG
 	// 모든 파일 close 해줘야됨
-	// struct file **fdt = thread_current()->fdt;
-	// for (int i = 2; i < 64; i++)
-	// {
-	// 	if (fdt[i] != 0)
-	// 	{
-	// 		file_close(**fdt[i]);
-	// 	}
-	// }
+	struct file **fdt = thread_current()->fdt;
+	for (int i = 2; i < 64; i++)
+	{
+		if (fdt[i] != NULL)
+		{
+			file_close(fdt[i]);
+		}
+	}
 
 	free(thread_current()->fdt);
 	process_exit();
