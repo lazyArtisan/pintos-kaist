@@ -393,16 +393,6 @@ void cond_wait(struct condition *cond, struct lock *lock)
 	lock_acquire(lock);
 }
 
-/* 옆자리에서 베껴온 함수 */
-static bool sema_greater(const struct list_elem *a_,
-						 const struct list_elem *b_, void *aux UNUSED)
-{
-	const struct semaphore_elem *a = list_entry(a_, struct semaphore_elem, elem);
-	const struct semaphore_elem *b = list_entry(b_, struct semaphore_elem, elem);
-	return list_entry(list_front(&(a->semaphore.waiters)), struct thread, elem)->priority <
-		   list_entry(list_front(&(b->semaphore.waiters)), struct thread, elem)->priority;
-}
-
 // 쓰레드를 우선순위 내림차순으로 정렬하기 위한 함수
 bool cond_descending_priority(const struct list_elem *a, const struct list_elem *b, void *aux)
 {

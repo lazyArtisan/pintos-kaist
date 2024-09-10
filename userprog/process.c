@@ -18,6 +18,7 @@
 #include "threads/mmu.h"
 #include "threads/vaddr.h"
 #include "intrinsic.h"
+#include "userprog/exception.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -78,11 +79,11 @@ initd(void *f_name)
 
 /* Clones the current process as `name`. Returns the new process's thread id, or
  * TID_ERROR if the thread cannot be created. */
-tid_t process_fork(const char *name, struct intr_frame *if_ UNUSED)
+tid_t process_fork(const char *name, struct intr_frame *if_)
 {
+	thread_current()->user_tf = *if_;
 	/* Clone current thread to new thread.*/
-	return thread_create(name,
-						 PRI_DEFAULT, __do_fork, thread_current());
+	return thread_create(name, PRI_DEFAULT, __do_fork, thread_current());
 }
 
 #ifndef VM
@@ -95,25 +96,35 @@ duplicate_pte(uint64_t *pte, void *va, void *aux)
 	struct thread *parent = (struct thread *)aux;
 	void *parent_page;
 	void *newpage;
-	bool writable;
+	bool writable = false;
 
 	/* 1. TODO: If the parent_page is kernel page, then return immediately. */
+	if (is_kern_pte(pte))
+		return false;
 
 	/* 2. Resolve VA from the parent's page map level 4. */
 	parent_page = pml4_get_page(parent->pml4, va);
 
 	/* 3. TODO: Allocate new PAL_USER page for the child and set result to
 	 *    TODO: NEWPAGE. */
+	newpage = palloc_get_page(PAL_USER);
 
 	/* 4. TODO: Duplicate parent's page to the new page and
 	 *    TODO: check whether parent's page is writable or not (set WRITABLE
 	 *    TODO: according to the result). */
+	if ((*pte & PTE_W) == PTE_W)
+		writable = true;
+
+	if (writable)
+		memcpy(newpage, parent_page, PGSIZE);
 
 	/* 5. Add new page to child's page table at address VA with WRITABLE
 	 *    permission. */
 	if (!pml4_set_page(current->pml4, va, newpage, writable))
 	{
 		/* 6. TODO: if fail to insert page, do error handling. */
+		pml4_destroy(current->pml4);
+		return false;
 	}
 	return true;
 }
@@ -130,7 +141,7 @@ __do_fork(void *aux)
 	struct thread *parent = (struct thread *)aux;
 	struct thread *current = thread_current();
 	/* TODO: somehow pass the parent_if. (i.e. process_fork()'s if_) */
-	struct intr_frame *parent_if;
+	struct intr_frame *parent_if = &parent->user_tf;
 	bool succ = true;
 
 	/* 1. Read the cpu context to local stack. */
@@ -157,7 +168,14 @@ __do_fork(void *aux)
 	 * TODO:       from the fork() until this function successfully duplicates
 	 * TODO:       the resources of parent.*/
 
+	// 파일 식별자 복사
+	for (int i = 2; i < 64; i++)
+		current->fdt[i] = file_duplicate(parent->fdt[i]);
+
 	process_init();
+
+	// 부모 리스트에 자식 추가
+	list_push_back(&parent->child_list, &current->child_elem);
 
 	/* Finally, switch to the newly created process. */
 	if (succ)
@@ -217,12 +235,21 @@ int process_wait(tid_t child_tid UNUSED)
 	int i = 0;
 	while (i <= 1 << 29)
 		i++;
-	// i = 0;
-	// while (i <= 1 << 30)
-	// 	i++;
-	// while (1)
-	// {
-	// }
+
+	// 자식 리스트 훑으며 tid에 해당하는거 찾음
+	struct list_elem *e;
+	struct list *child_list = &thread_current()->child_list;
+	for (e = list_begin(child_list); e != list_end(child_list); e = list_next(e))
+	{
+		// TID가 유효하지 않거나, 부른 놈의 자식이 아니었거나, 이미 wait 하고 있던거였다면, 안 기다리고 즉시 return -1
+		// wait 하려고 봤더니 커널이 이미 죽였으면 return -1
+
+		// 찾았으면 순회 끝
+		tid_t e_t = list_entry(e, struct thread, elem)->tid;
+		if (e_t == child_tid)
+		{
+		}
+	}
 
 	return -1;
 }

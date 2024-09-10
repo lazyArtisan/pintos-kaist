@@ -102,25 +102,28 @@ struct thread
 	int nice;
 	int recent_cpu;
 	int dying_status;
-	struct file **fdt; /* 파일 디스크립터 테이블 */
-	int next_fd;	   /* 다음에 할당할 파일 디스크립터 번호 */
+	struct file **fdt;		/* 파일 디스크립터 테이블 */
+	int next_fd;			/* 다음에 할당할 파일 디스크립터 번호 */
+	struct list child_list; /* 자신이 갖고 있는 자식 프로세스 리스트 */
 
 	/* Shared between thread.c and synch.c. */
-	struct list_elem elem;	   /* List element. */
-	struct list_elem all_elem; /* all_thread_list를 위한 elem */
+	struct list_elem elem;		 /* List element. */
+	struct list_elem all_elem;	 /* all_thread_list를 위한 elem */
+	struct list_elem child_elem; /* 부모-자식 관계를 위한 elem */
 
-#ifdef USERPROG
+	// #ifdef USERPROG
 	/* Owned by userprog/process.c. */
 	uint64_t *pml4; /* Page map level 4 */
-#endif
+// #endif
 #ifdef VM
 	/* Table for whole virtual memory owned by thread. */
 	struct supplemental_page_table spt;
 #endif
 
 	/* Owned by thread.c. */
-	struct intr_frame tf; /* Information for switching */
-	unsigned magic;		  /* Detects stack overflow. */
+	struct intr_frame tf;	   /* Information for switching */
+	struct intr_frame user_tf; /* userland context intr_frame */
+	unsigned magic;			   /* Detects stack overflow. */
 };
 
 /* If false (default), use round-robin scheduler.

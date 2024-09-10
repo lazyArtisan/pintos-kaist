@@ -79,6 +79,9 @@ struct list lock_list;
 /* 모든 쓰레드가 있는 리스트 */
 struct list all_thread_list;
 
+/* 자신이 갖고 있는 자식 프로세스 리스트 */
+struct list child_list;
+
 /* Statistics. */
 static long long idle_ticks;   /* # of timer ticks spent idle. */
 static long long kernel_ticks; /* # of timer ticks in kernel threads. */
@@ -156,6 +159,7 @@ void thread_init(void)
 	list_init(&sleeping_list);
 	list_init(&lock_list);
 	list_init(&all_thread_list);
+	list_init(&child_list);
 
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread();

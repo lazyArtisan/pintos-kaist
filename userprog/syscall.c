@@ -166,6 +166,7 @@ int exec(const char *file)
 /* 자식 프로세스 (pid) 를 기다려서 자식의 종료 상태(exit status)를 가져옵니다. */
 int wait(pid_t pid)
 {
+	return process_wait(pid);
 }
 
 /*  file(첫 번째 인자)를 이름으로 하고 크기가 initial_size(두 번째 인자)인 새로운 파일을 생성합니다 */
