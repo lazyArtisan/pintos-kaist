@@ -83,7 +83,13 @@ tid_t process_fork(const char *name, struct intr_frame *if_)
 {
 	thread_current()->user_tf = *if_;
 	/* Clone current thread to new thread.*/
-	return thread_create(name, PRI_DEFAULT, __do_fork, thread_current());
+
+	tid_t tid = thread_create(name, PRI_DEFAULT, __do_fork, thread_current());
+
+	// if (tid == TID_ERROR) // 쓰레드를 생성하지 못했다면 바로 에러 코드 리턴
+	// 	return tid;
+
+	return tid;
 }
 
 #ifndef VM
@@ -99,7 +105,7 @@ duplicate_pte(uint64_t *pte, void *va, void *aux)
 	bool writable = false;
 
 	/* 1. TODO: If the parent_page is kernel page, then return immediately. */
-	if (is_kern_pte(pte))
+	if (is_kern_pte(pte)) // 이거 주석처리하면 오류 생기는 걸로 봐서 맞게 한듯
 		return false;
 
 	/* 2. Resolve VA from the parent's page map level 4. */
@@ -112,11 +118,10 @@ duplicate_pte(uint64_t *pte, void *va, void *aux)
 	/* 4. TODO: Duplicate parent's page to the new page and
 	 *    TODO: check whether parent's page is writable or not (set WRITABLE
 	 *    TODO: according to the result). */
-	if ((*pte & PTE_W) == PTE_W)
-		writable = true;
+	memcpy(newpage, parent_page, PGSIZE);
 
-	if (writable)
-		memcpy(newpage, parent_page, PGSIZE);
+	if (is_writable(pte))
+		writable = true;
 
 	/* 5. Add new page to child's page table at address VA with WRITABLE
 	 *    permission. */
@@ -143,6 +148,11 @@ __do_fork(void *aux)
 	/* TODO: somehow pass the parent_if. (i.e. process_fork()'s if_) */
 	struct intr_frame *parent_if = &parent->user_tf;
 	bool succ = true;
+
+	// struct list_elem *e;
+	// struct list *child_list = &parent->child_list;
+	// for (e = list_begin(child_list); e != list_end(child_list); e = list_next(e)) // 순회를 못 때려버림
+	// 	printf("리스트에 들어있는 것은: %s\n", list_entry(e, struct thread, child_elem)->name);
 
 	/* 1. Read the cpu context to local stack. */
 	memcpy(&if_, parent_if, sizeof(struct intr_frame));
@@ -173,9 +183,6 @@ __do_fork(void *aux)
 		current->fdt[i] = file_duplicate(parent->fdt[i]);
 
 	process_init();
-
-	// 부모 리스트에 자식 추가
-	list_push_back(&parent->child_list, &current->child_elem);
 
 	/* Finally, switch to the newly created process. */
 	if (succ)
@@ -218,6 +225,21 @@ int process_exec(void *f_name)
 	NOT_REACHED();
 }
 
+// 자식 리스트 훑으며 tid에 해당하는거 찾음
+struct thread *find_child(tid_t tid)
+{
+	struct list_elem *e;
+	struct thread *found_t;
+	struct list *child_list = &thread_current()->child_list;
+	for (e = list_begin(child_list); e != list_end(child_list); e = list_next(e))
+	{
+		found_t = list_entry(e, struct thread, child_elem);
+		if (found_t->tid == tid)
+			return found_t;
+	}
+	return NULL;
+}
+
 /* Waits for thread TID to die and returns its exit status.  If
  * it was terminated by the kernel (i.e. killed due to an
  * exception), returns -1.  If TID is invalid or if it was not a
@@ -232,24 +254,36 @@ int process_wait(tid_t child_tid UNUSED)
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
-	int i = 0;
-	while (i <= 1 << 29)
-		i++;
+	// int i = 0;
+	// while (i <= 1 << 29)
+	// 	i++;
 
-	// 자식 리스트 훑으며 tid에 해당하는거 찾음
-	struct list_elem *e;
-	struct list *child_list = &thread_current()->child_list;
-	for (e = list_begin(child_list); e != list_end(child_list); e = list_next(e))
+	// 유효하지 않은 TID면 return -1
+	if (child_tid < 0 || 64 < child_tid)
+		return -1;
+
+	// struct list_elem *e;
+	// struct list *child_list = &thread_current()->child_list;
+	// printf("지금부터 %s의 리스트 순회 시작\n", thread_current()->name);
+	// for (e = list_begin(child_list); e != list_end(child_list); e = list_next(e)) // 순회를 못 때려버림
+	// 	printf("리스트에 들어있는 것은: %s\n", list_entry(e, struct thread, child_elem)->name);
+
+	struct thread *child = find_child(child_tid);
+	if (child == NULL)
+		return -1;
+	else
 	{
-		// TID가 유효하지 않거나, 부른 놈의 자식이 아니었거나, 이미 wait 하고 있던거였다면, 안 기다리고 즉시 return -1
-		// wait 하려고 봤더니 커널이 이미 죽였으면 return -1
-
-		// 찾았으면 순회 끝
-		tid_t e_t = list_entry(e, struct thread, elem)->tid;
-		if (e_t == child_tid)
-		{
-		}
+		sema_down(&child->child_sema);
+		list_remove(&child->child_elem);
 	}
+
+	// 이미 wait 하고 있던거였다면, 안 기다리고 즉시 return -1
+	// wait 하려고 봤더니 커널이 이미 죽였으면 리스트에서 삭제하고 return -1
+
+	// 부모가 sema_down을 한다. 자식은 exit할 때 sema_up을 한다
+	// 다 기다렸다면 자신이 갖고 있는 자식 리스트에서 pid를 제거
+
+	// TID에 해당하는 자식이 없었다면
 
 	return -1;
 }
@@ -263,7 +297,9 @@ void process_exit(void)
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
-	// printf("exit(%d)", curr->dying_status);
+
+	// 자신의 sema를 올린다
+	sema_up(&curr->child_sema);
 
 	process_cleanup();
 }

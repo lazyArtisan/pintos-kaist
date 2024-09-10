@@ -82,6 +82,9 @@ struct list all_thread_list;
 /* 자신이 갖고 있는 자식 프로세스 리스트 */
 struct list child_list;
 
+/* 부모 묶어놓기 위한 sema */
+struct semaphore child_sema;
+
 /* Statistics. */
 static long long idle_ticks;   /* # of timer ticks spent idle. */
 static long long kernel_ticks; /* # of timer ticks in kernel threads. */
@@ -152,14 +155,15 @@ void thread_init(void)
 		.address = (uint64_t)gdt};
 	lgdt(&gdt_ds);
 
-	/* Init the globla thread context */
+	/* Init the global thread context - 전역 리스트니까 헷갈리지 말 것 */
 	lock_init(&tid_lock);
 	list_init(&ready_list);
 	list_init(&destruction_req);
 	list_init(&sleeping_list);
-	list_init(&lock_list);
+	list_init(&lock_list); // 얘는 어떻게 전역 리스트로 선언된건데 잘 작동해줬던 거지?
 	list_init(&all_thread_list);
-	list_init(&child_list);
+	list_init(&child_list);	   // 자신이 가진 자식 리스트 초기화
+	sema_init(&child_sema, 0); // 부모를 기다리게 만들 sema 초기화
 
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread();
@@ -233,6 +237,8 @@ tid_t thread_create(const char *name, int priority,
 	struct thread *t;
 	tid_t tid;
 
+	// printf("탄생했다: %s\n", name);
+
 	ASSERT(function != NULL);
 
 	/* Allocate thread. */
@@ -264,6 +270,9 @@ tid_t thread_create(const char *name, int priority,
 	t->fdt[0] = STDIN_FILENO;					   // 있는 척하기
 	t->fdt[1] = STDOUT_FILENO;					   // 있는 척하기
 	t->next_fd = 2;
+
+	list_push_back(&thread_current()->child_list, &t->child_elem); // 바로 자식 리스트에 들어가버리기
+																   // printf("%s는 %s의 자식이 되었다!\n", t->name, thread_current()->name);
 #endif
 
 	check_priority_and_yield();
@@ -579,6 +588,8 @@ init_thread(struct thread *t, const char *name, int priority)
 	list_push_back(&all_thread_list, &t->all_elem);
 	t->nice = 0;
 	t->recent_cpu = 0;
+	list_init(&t->child_list);	  // 자신이 가진 자식 리스트 초기화
+	sema_init(&t->child_sema, 0); // 부모를 기다리게 만들 sema 초기화
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should

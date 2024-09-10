@@ -1,2 +1,14 @@
 FAIL
-Run started 'exec-bad-ptr' but it never finished
+Kernel panic in run: PANIC at ../../userprog/exception.c:99 in kill(): Kernel bug - unexpected interrupt in kernel
+Call stack: 0x80042184b4 0x800421d01d 0x800421d19c 0x8004209068 0x8004209486 0x800421c1b5 0x800421bef4 0x800421d5a0 0x800421d370 0x800421d211
+Translation of call stack:
+0x00000080042184b4: debug_panic (lib/kernel/debug.c:32)
+0x000000800421d01d: kill (userprog/exception.c:105)
+0x000000800421d19c: page_fault (userprog/exception.c:160 (discriminator 12))
+0x0000008004209068: intr_handler (threads/interrupt.c:352)
+0x0000008004209486: intr_entry (threads/intr-stubs.o:?)
+0x000000800421c1b5: load (userprog/process.c:425)
+0x000000800421bef4: process_exec (userprog/process.c:214)
+0x000000800421d5a0: exec (userprog/syscall.c:165)
+0x000000800421d370: syscall_handler (userprog/syscall.c:103)
+0x000000800421d211: no_sti (userprog/syscall-entry.o:?)

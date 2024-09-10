@@ -110,6 +110,7 @@ struct thread
 	struct list_elem elem;		 /* List element. */
 	struct list_elem all_elem;	 /* all_thread_list를 위한 elem */
 	struct list_elem child_elem; /* 부모-자식 관계를 위한 elem */
+	struct semaphore child_sema; /* 부모를 기다리게 하기 위한 sema */
 
 	// #ifdef USERPROG
 	/* Owned by userprog/process.c. */

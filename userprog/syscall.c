@@ -100,10 +100,10 @@ void syscall_handler(struct intr_frame *f)
 		f->R.rax = fork(f->R.rdi);
 		break;
 	case SYS_EXEC:
-		halt();
+		f->R.rax = exec(f->R.rdi);
 		break;
 	case SYS_WAIT:
-		halt();
+		f->R.rax = wait(f->R.rdi);
 		break;
 	case SYS_CREATE:
 		f->R.rax = create(f->R.rdi, f->R.rsi);
@@ -161,6 +161,7 @@ pid_t fork(const char *thread_name)
 /* 현재의 프로세스가 cmd_line에서 이름이 주어지는 실행가능한 프로세스로 변경됩니다. */
 int exec(const char *file)
 {
+	return process_exec(file);
 }
 
 /* 자식 프로세스 (pid) 를 기다려서 자식의 종료 상태(exit status)를 가져옵니다. */
