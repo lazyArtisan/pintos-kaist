@@ -165,6 +165,7 @@ pid_t fork(const char *thread_name, struct intr_frame *f)
 int exec(const char *file)
 {
 	check_address(file);
+
 	char *fn_copy;
 
 	off_t size = strlen(file) + 1;
@@ -174,7 +175,7 @@ int exec(const char *file)
 	strlcpy(fn_copy, file, size);
 
 	int result = process_exec(fn_copy);
-	palloc_free_page(fn_copy);
+	// palloc_free_page(fn_copy);
 	if (result == -1)
 	{
 		exit(-1);

@@ -441,7 +441,7 @@ load(const char *file_name, struct intr_frame *if_)
 	/* Open executable file. */
 	file = filesys_open(only_file_name);
 	// file = filesys_open(file_name);
-	if (file == NULL)
+	if (file == NULL || file == -1)
 	{
 		printf("load: %s: open failed\n", only_file_name);
 		goto done;
@@ -593,7 +593,8 @@ load(const char *file_name, struct intr_frame *if_)
 
 done:
 	/* We arrive here whether the load is successful or not. */
-	file_close(file);
+	if ((file != NULL) && (file != -1))
+		file_close(file);
 	return success;
 }
 

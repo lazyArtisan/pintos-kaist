@@ -33,12 +33,12 @@ Executing 'sm-seq-block':
 (sm-seq-block) 512 bytes read starting at offset 0 in "noodle" differ from expected: FAILED
 sm-seq-block: exit(1)
 Execution of 'sm-seq-block' complete.
-Timer: 143 ticks
-Thread: 96 idle ticks, 31 kernel ticks, 16 user ticks
+Timer: 113 ticks
+Thread: 69 idle ticks, 35 kernel ticks, 9 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 124 reads, 289 writes
 hd1:0: 107 reads, 0 writes
-Console: 1987 characters output
+Console: 1986 characters output
 Keyboard: 0 keys pressed
 Exception: 0 page faults
 Powering off...
