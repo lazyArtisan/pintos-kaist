@@ -106,7 +106,7 @@ duplicate_pte(uint64_t *pte, void *va, void *aux)
 
 	/* 1. TODO: If the parent_page is kernel page, then return immediately. */
 	if (is_kern_pte(pte)) // 이거 주석처리하면 오류 생기는 걸로 봐서 맞게 한듯
-		return false;
+		return true;
 
 	/* 2. Resolve VA from the parent's page map level 4. */
 	parent_page = pml4_get_page(parent->pml4, va);
@@ -179,8 +179,21 @@ __do_fork(void *aux)
 	 * TODO:       the resources of parent.*/
 
 	// 파일 식별자 복사
-	for (int i = 2; i < 64; i++)
-		current->fdt[i] = file_duplicate(parent->fdt[i]);
+	// for (int i = 2; i < 64; i++)
+	// 	current->fdt[i] = file_duplicate(parent->fdt[i]);
+
+	for (int i = 0; i < FDT_COUNT_LIMIT; i++)
+	{
+		struct file *file = parent->fdt[i];
+		if (file == NULL)
+			continue;
+		struct file *new_file;
+		if (file > 2)
+			new_file = file_duplicate(file);
+		else
+			new_file = file;
+		current->fdt[i] = new_file;
+	}
 
 	process_init();
 

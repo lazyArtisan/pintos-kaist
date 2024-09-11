@@ -141,6 +141,8 @@ void thread_print_stats(void);
 
 extern struct thread *idle_thread;
 
+#define FDT_COUNT_LIMIT (1 << 9)
+
 typedef void thread_func(void *aux);
 tid_t thread_create(const char *name, int priority, thread_func *, void *);
 
