@@ -27,6 +27,7 @@ static void process_cleanup(void);
 static bool load(const char *file_name, struct intr_frame *if_);
 static void initd(void *f_name);
 static void __do_fork(void *);
+struct thread *find_child(tid_t tid);
 
 /* General process initializer for initd and other process. */
 static void
@@ -81,10 +82,12 @@ initd(void *f_name)
  * TID_ERROR if the thread cannot be created. */
 tid_t process_fork(const char *name, struct intr_frame *if_)
 {
-	thread_current()->user_tf = *if_;
+	thread_current()->user_tf = if_;
 	/* Clone current thread to new thread.*/
 
 	tid_t tid = thread_create(name, PRI_DEFAULT, __do_fork, thread_current());
+
+	sema_down(&find_child(tid)->child_sema);
 
 	// if (tid == TID_ERROR) // 쓰레드를 생성하지 못했다면 바로 에러 코드 리턴
 	// 	return tid;
@@ -146,7 +149,7 @@ __do_fork(void *aux)
 	struct thread *parent = (struct thread *)aux;
 	struct thread *current = thread_current();
 	/* TODO: somehow pass the parent_if. (i.e. process_fork()'s if_) */
-	struct intr_frame *parent_if = &parent->user_tf;
+	struct intr_frame *parent_if = parent->user_tf;
 	bool succ = true;
 
 	// struct list_elem *e;
@@ -198,8 +201,10 @@ __do_fork(void *aux)
 	process_init();
 
 	if_.R.rax = 0;
-
 	/* Finally, switch to the newly created process. */
+
+	sema_up(&current->child_sema);
+
 	if (succ)
 		do_iret(&if_);
 error:
@@ -280,7 +285,6 @@ int process_wait(tid_t child_tid UNUSED)
 	else
 	{
 		sema_down(&child->child_sema);
-		list_remove(&child->child_elem);
 		// printf("child->dying_status: %d\n", child->dying_status);
 		return child->dying_status;
 	}
@@ -306,6 +310,7 @@ void process_exit(void)
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
 
+	list_remove(&curr->child_elem);
 	// 자신의 sema를 올린다
 	sema_up(&curr->child_sema);
 

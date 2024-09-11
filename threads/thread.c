@@ -271,6 +271,7 @@ tid_t thread_create(const char *name, int priority,
 
 	list_push_back(&thread_current()->child_list, &t->child_elem); // 바로 자식 리스트에 들어가버리기
 																   // printf("%s는 %s의 자식이 되었다!\n", t->name, thread_current()->name);
+
 #endif
 
 	/* Add to run queue. */
@@ -591,6 +592,7 @@ init_thread(struct thread *t, const char *name, int priority)
 	t->recent_cpu = 0;
 	list_init(&t->child_list);	  // 자신이 가진 자식 리스트 초기화
 	sema_init(&t->child_sema, 0); // 부모를 기다리게 만들 sema 초기화
+	sema_init(&t->free_sema, 0);
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should

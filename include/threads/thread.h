@@ -111,6 +111,7 @@ struct thread
 	struct list_elem all_elem;	 /* all_thread_list를 위한 elem */
 	struct list_elem child_elem; /* 부모-자식 관계를 위한 elem */
 	struct semaphore child_sema; /* 부모를 기다리게 하기 위한 sema */
+	struct semaphore free_sema;	 /* 부모의 exit */
 
 	// #ifdef USERPROG
 	/* Owned by userprog/process.c. */
@@ -122,9 +123,9 @@ struct thread
 #endif
 
 	/* Owned by thread.c. */
-	struct intr_frame tf;	   /* Information for switching */
-	struct intr_frame user_tf; /* userland context intr_frame */
-	unsigned magic;			   /* Detects stack overflow. */
+	struct intr_frame tf;		/* Information for switching */
+	struct intr_frame *user_tf; /* userland context intr_frame */
+	unsigned magic;				/* Detects stack overflow. */
 };
 
 /* If false (default), use round-robin scheduler.
