@@ -13,6 +13,7 @@
 #include "filesys/filesys.h"
 #include "include/threads/vaddr.h"
 #include "devices/input.h"
+#include "threads/palloc.h"
 
 void syscall_entry(void);
 void syscall_handler(struct intr_frame *);
@@ -64,6 +65,8 @@ unsigned tell(int fd);
 void close(int fd);
 
 int dup2(int oldfd, int newfd);
+
+void check_address(void *addr);
 
 void syscall_init(void)
 {
@@ -161,7 +164,22 @@ pid_t fork(const char *thread_name, struct intr_frame *f)
 /* 현재의 프로세스가 cmd_line에서 이름이 주어지는 실행가능한 프로세스로 변경됩니다. */
 int exec(const char *file)
 {
-	return process_exec(file);
+	check_address(file);
+	char *fn_copy;
+
+	off_t size = strlen(file) + 1;
+	fn_copy = palloc_get_page(PAL_ZERO);
+	if (fn_copy == NULL)
+		return -1;
+	strlcpy(fn_copy, file, size);
+
+	int result = process_exec(fn_copy);
+	palloc_free_page(fn_copy);
+	if (result == -1)
+	{
+		exit(-1);
+	}
+	return result;
 }
 
 /* 자식 프로세스 (pid) 를 기다려서 자식의 종료 상태(exit status)를 가져옵니다. */
@@ -298,9 +316,12 @@ int dup2(int oldfd, int newfd)
 }
 
 /* 포인터 유효성 체크하는 함수. wait 구현하고 다시 해볼 것. */
-bool check_ptr(char *ptr)
+void check_address(void *addr)
 {
-	if (ptr == NULL || pml4_get_page(thread_current()->pml4, ptr) == NULL || !is_user_vaddr(ptr))
-		return false;
-	return true;
+	struct thread *t = thread_current();
+
+	if (!is_user_vaddr(addr) || addr == NULL || pml4_get_page(t->pml4, addr) == NULL)
+	{
+		exit(-1);
+	}
 }
