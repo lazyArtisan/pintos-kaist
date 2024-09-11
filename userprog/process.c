@@ -87,10 +87,15 @@ tid_t process_fork(const char *name, struct intr_frame *if_)
 
 	tid_t tid = thread_create(name, PRI_DEFAULT, __do_fork, thread_current());
 
-	sema_down(&find_child(tid)->child_sema);
+	if (tid == TID_ERROR)
+		return TID_ERROR;
 
-	// if (tid == TID_ERROR) // 쓰레드를 생성하지 못했다면 바로 에러 코드 리턴
-	// 	return tid;
+	struct thread *child = find_child(tid);
+
+	sema_down(&child->fork_sema);
+
+	if (child->dying_status == -1)
+		return TID_ERROR;
 
 	return tid;
 }
@@ -198,17 +203,20 @@ __do_fork(void *aux)
 		current->fdt[i] = new_file;
 	}
 
-	process_init();
+	// process_init();
 
 	if_.R.rax = 0;
-	/* Finally, switch to the newly created process. */
 
-	sema_up(&current->child_sema);
+	sema_up(&current->fork_sema);
+
+	/* Finally, switch to the newly created process. */
 
 	if (succ)
 		do_iret(&if_);
 error:
-	thread_exit();
+	current->dying_status = TID_ERROR;
+	sema_up(&current->fork_sema);
+	exit(TID_ERROR);
 }
 
 /* Switch the current execution context to the f_name.
@@ -282,22 +290,14 @@ int process_wait(tid_t child_tid UNUSED)
 	struct thread *child = find_child(child_tid);
 	if (child == NULL)
 		return -1;
-	else
-	{
-		sema_down(&child->child_sema);
-		// printf("child->dying_status: %d\n", child->dying_status);
-		return child->dying_status;
-	}
 
-	// 이미 wait 하고 있던거였다면, 안 기다리고 즉시 return -1
-	// wait 하려고 봤더니 커널이 이미 죽였으면 리스트에서 삭제하고 return -1
+	sema_down(&child->wait_sema);
 
-	// 부모가 sema_down을 한다. 자식은 exit할 때 sema_up을 한다
-	// 다 기다렸다면 자신이 갖고 있는 자식 리스트에서 pid를 제거
+	int dying_status = child->dying_status;
+	list_remove(&child->elem);
+	sema_up(&child->free_sema);
 
-	// TID에 해당하는 자식이 없었다면
-
-	return -1;
+	return dying_status;
 }
 
 /* Exit the process. This function is called by thread_exit (). */
@@ -310,11 +310,10 @@ void process_exit(void)
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
 
-	list_remove(&curr->child_elem);
-	// 자신의 sema를 올린다
-	sema_up(&curr->child_sema);
-
 	process_cleanup();
+
+	sema_up(&curr->wait_sema);
+	sema_down(&curr->free_sema);
 }
 
 /* Free the current process's resources. */

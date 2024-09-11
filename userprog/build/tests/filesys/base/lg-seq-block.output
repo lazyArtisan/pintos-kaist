@@ -1,0 +1,39 @@
+Kernel command line: -q -f put lg-seq-block run lg-seq-block
+0 ~ 9fc00 1
+100000 ~ 13e0000 1
+Pintos booting with: 
+	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
+	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
+Calibrating timer...  19,020,800 loops/s.
+hd0:0: detected 321 sector (160 kB) disk, model "QEMU HARDDISK", serial "QM00001"
+hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
+hd1:0: detected 107 sector (53 kB) disk, model "QEMU HARDDISK", serial "QM00003"
+Formatting file system...done.
+Boot complete.
+Putting 'lg-seq-block' into the file system...
+Executing 'lg-seq-block':
+(lg-seq-block) begin
+(lg-seq-block) create "noodle"
+(lg-seq-block) open "noodle"
+(lg-seq-block) writing "noodle"
+(lg-seq-block) close "noodle"
+(lg-seq-block) open "noodle" for verification
+(lg-seq-block) 32 bytes read starting at offset 0 in "noodle" differ from expected.
+(lg-seq-block) Data actually read:
+0000000000000000  80 8d 9c fc 81 51 e3 6e-ea bb 46 68 95 86 1f a3 |.....Q.n..Fh....|
+0000000000000010  ba 3b 1c bd 2f e0 d1 d7-33 2f 01 54 a3 da 1a 23 |.;../...3/.T...#|
+(lg-seq-block) Expected data:
+0000000000000000  de 18 89 41 a3 37 5d 3a-8a 06 1e 67 57 6e 92 6d |...A.7]:...gWn.m|
+0000000000000010  c7 1a 7f a3 f0 cc eb 97-45 2b 4d 32 27 96 5f 9e |........E+M2'._.|
+(lg-seq-block) 32 bytes read starting at offset 0 in "noodle" differ from expected: FAILED
+lg-seq-block: exit(1)
+Execution of 'lg-seq-block' complete.
+Timer: 196 ticks
+Thread: 107 idle ticks, 49 kernel ticks, 40 user ticks
+hd0:0: 0 reads, 0 writes
+hd0:1: 260 reads, 697 writes
+hd1:0: 107 reads, 0 writes
+Console: 1596 characters output
+Keyboard: 0 keys pressed
+Exception: 0 page faults
+Powering off...

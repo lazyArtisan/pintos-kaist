@@ -1,0 +1,44 @@
+Kernel command line: -q -f put sm-seq-block run sm-seq-block
+0 ~ 9fc00 1
+100000 ~ 13e0000 1
+Pintos booting with: 
+	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
+	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
+Calibrating timer...  107,929,600 loops/s.
+hd0:0: detected 321 sector (160 kB) disk, model "QEMU HARDDISK", serial "QM00001"
+hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
+hd1:0: detected 107 sector (53 kB) disk, model "QEMU HARDDISK", serial "QM00003"
+Formatting file system...done.
+Boot complete.
+Putting 'sm-seq-block' into the file system...
+Executing 'sm-seq-block':
+(sm-seq-block) begin
+(sm-seq-block) create "noodle"
+(sm-seq-block) open "noodle"
+(sm-seq-block) writing "noodle"
+(sm-seq-block) close "noodle"
+(sm-seq-block) open "noodle" for verification
+(sm-seq-block) 512 bytes read starting at offset 0 in "noodle" differ from expected.
+(sm-seq-block) Showing first differing 64 bytes.
+(sm-seq-block) Data actually read:
+0000000000000000  79 67 82 ee 8f fc 82 55-b5 b8 8e cd 21 05 02 fe |yg.....U....!...|
+0000000000000010  bc ec 1b 52 16 b2 f7 2d-03 b4 de 5b 09 1d b9 51 |...R...-...[...Q|
+0000000000000020  01 1f 32 09 de d7 5e 74-ca 53 ca 66 f5 d6 5a fe |..2...^t.S.f..Z.|
+0000000000000030  30 17 7a e9 b9 e0 74 e1-1b 97 75 5b a1 ba 54 ad |0.z...t...u[..T.|
+(sm-seq-block) Expected data:
+0000000000000000  de 18 89 41 a3 37 5d 3a-8a 06 1e 67 57 6e 92 6d |...A.7]:...gWn.m|
+0000000000000010  c7 1a 7f a3 f0 cc eb 97-45 2b 4d 32 27 96 5f 9e |........E+M2'._.|
+0000000000000020  a8 cc 75 07 6d 9f b9 c5-41 7a a5 cb 30 fc 22 19 |..u.m...Az..0.".|
+0000000000000030  8b 34 98 2d bb 62 9e c0-4b 4f 8b 05 a0 71 08 50 |.4.-.b..KO...q.P|
+(sm-seq-block) 512 bytes read starting at offset 0 in "noodle" differ from expected: FAILED
+sm-seq-block: exit(1)
+Execution of 'sm-seq-block' complete.
+Timer: 139 ticks
+Thread: 74 idle ticks, 46 kernel ticks, 20 user ticks
+hd0:0: 0 reads, 0 writes
+hd0:1: 124 reads, 289 writes
+hd1:0: 107 reads, 0 writes
+Console: 1987 characters output
+Keyboard: 0 keys pressed
+Exception: 0 page faults
+Powering off...

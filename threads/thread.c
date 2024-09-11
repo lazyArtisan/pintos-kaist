@@ -590,9 +590,10 @@ init_thread(struct thread *t, const char *name, int priority)
 	list_push_back(&all_thread_list, &t->all_elem);
 	t->nice = 0;
 	t->recent_cpu = 0;
-	list_init(&t->child_list);	  // 자신이 가진 자식 리스트 초기화
-	sema_init(&t->child_sema, 0); // 부모를 기다리게 만들 sema 초기화
+	list_init(&t->child_list);	 // 자신이 가진 자식 리스트 초기화
+	sema_init(&t->fork_sema, 0); // 부모를 기다리게 만들 sema 초기화
 	sema_init(&t->free_sema, 0);
+	sema_init(&t->wait_sema, 0);
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
