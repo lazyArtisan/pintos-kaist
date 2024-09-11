@@ -103,7 +103,7 @@ struct thread
 	int recent_cpu;
 	int dying_status;
 	struct file **fdt;		/* 파일 디스크립터 테이블 */
-	int next_fd;			/* 다음에 할당할 파일 디스크립터 번호 */
+	int fd_idx;				/* 다음에 할당할 파일 디스크립터 번호 */
 	struct list child_list; /* 자신이 갖고 있는 자식 프로세스 리스트 */
 
 	/* Shared between thread.c and synch.c. */

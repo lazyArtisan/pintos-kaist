@@ -202,21 +202,6 @@ bool remove(const char *file)
 {
 }
 
-int find_next_fd(struct thread *t)
-{
-	struct file **fdt = t->fdt;
-
-	for (int i = 2; i < 64; i++)
-	{
-		if (fdt[i] == NULL)
-		{
-			t->next_fd = i;
-			return i;
-		}
-	}
-	return -1; // 64개나 채울 일이? 일단 처리는 해둠.
-}
-
 /* file(첫 번째 인자)이라는 이름을 가진 파일을 엽니다. */
 int open(const char *file)
 {
@@ -237,9 +222,9 @@ int open(const char *file)
 	if (t->fdt != NULL)
 	{
 		struct file **fdt = t->fdt;
-		fdt[t->next_fd] = real_file;
-		return_fd = t->next_fd;
-		find_next_fd(t);
+		fdt[t->fd_idx] = real_file;
+		return_fd = t->fd_idx;
+		t->fd_idx++;
 	}
 
 	return return_fd;
@@ -256,7 +241,7 @@ int filesize(int fd)
 /* fd로 열린 파일에서 size 바이트만큼 읽어서 buffer에 넣는다 */
 int read(int fd, void *buffer, unsigned length)
 {
-	if (fd < 0 || 64 <= fd || fd == 1 || pml4_get_page(thread_current()->pml4, buffer) == NULL || !is_user_vaddr(buffer))
+	if (fd < 0 || FDT_COUNT_LIMIT <= fd || fd == 1 || pml4_get_page(thread_current()->pml4, buffer) == NULL || !is_user_vaddr(buffer))
 		exit(-1);
 
 	// fd에서 file 꺼내와서 file_read에 넣어준다
@@ -267,7 +252,7 @@ int read(int fd, void *buffer, unsigned length)
 /* buffer로부터 open file fd로 size 바이트를 적어줍니다. */
 int write(int fd, const void *buffer, unsigned length)
 {
-	if (fd < 0 || 64 <= fd || fd == 0 || pml4_get_page(thread_current()->pml4, buffer) == NULL || !is_user_vaddr(buffer))
+	if (fd < 0 || FDT_COUNT_LIMIT <= fd || fd == 0 || pml4_get_page(thread_current()->pml4, buffer) == NULL || !is_user_vaddr(buffer))
 		exit(-1);
 
 	// strlcpy(fd, buffer, length);
@@ -295,7 +280,7 @@ unsigned tell(int fd)
 /* 파일 식별자 fd를 닫습니다. */
 void close(int fd)
 {
-	if (fd < 0 || 64 <= fd)
+	if (fd < 0 || FDT_COUNT_LIMIT <= fd)
 		return;
 
 	// 파일 디스크립터 테이블에서 fd에 할당된 file 구조체를 찾은 뒤에 일단 저장한 뒤

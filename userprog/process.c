@@ -186,10 +186,6 @@ __do_fork(void *aux)
 	 * TODO:       from the fork() until this function successfully duplicates
 	 * TODO:       the resources of parent.*/
 
-	// 파일 식별자 복사
-	// for (int i = 2; i < 64; i++)
-	// 	current->fdt[i] = file_duplicate(parent->fdt[i]);
-
 	for (int i = 0; i < FDT_COUNT_LIMIT; i++)
 	{
 		struct file *file = parent->fdt[i];

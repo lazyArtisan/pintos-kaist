@@ -237,8 +237,6 @@ tid_t thread_create(const char *name, int priority,
 	struct thread *t;
 	tid_t tid;
 
-	// printf("탄생했다: %s\n", name);
-
 	ASSERT(function != NULL);
 
 	/* Allocate thread. */
@@ -261,18 +259,12 @@ tid_t thread_create(const char *name, int priority,
 	t->tf.cs = SEL_KCSEG;
 	t->tf.eflags = FLAG_IF;
 
-#ifdef USERPROG
-	// t->fdt = malloc(64 * sizeof(struct file *));   // 동적 할당 (없어지지 말라고)
-	// memset(t->fdt, 0, 64 * sizeof(struct file *)); // 모든 포인터를 0으로 초기화 // t->fdt = {0};, memset(&t->fdt, 0, 64); 쓰면 안됨
 	t->fdt = palloc_get_page(PAL_ZERO);
 	t->fdt[0] = STDIN_FILENO;  // 있는 척하기
 	t->fdt[1] = STDOUT_FILENO; // 있는 척하기
-	t->next_fd = 2;
+	t->fd_idx = 2;
 
 	list_push_back(&thread_current()->child_list, &t->child_elem); // 바로 자식 리스트에 들어가버리기
-																   // printf("%s는 %s의 자식이 되었다!\n", t->name, thread_current()->name);
-
-#endif
 
 	/* Add to run queue. */
 	thread_unblock(t);
