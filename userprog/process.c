@@ -197,6 +197,8 @@ __do_fork(void *aux)
 
 	process_init();
 
+	if_.R.rax = 0;
+
 	/* Finally, switch to the newly created process. */
 	if (succ)
 		do_iret(&if_);
@@ -267,19 +269,10 @@ int process_wait(tid_t child_tid UNUSED)
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
-	// int i = 0;
-	// while (i <= 1 << 29)
-	// 	i++;
 
 	// 유효하지 않은 TID면 return -1
 	if (child_tid < 0 || 64 < child_tid)
 		return -1;
-
-	// struct list_elem *e;
-	// struct list *child_list = &thread_current()->child_list;
-	// printf("지금부터 %s의 리스트 순회 시작\n", thread_current()->name);
-	// for (e = list_begin(child_list); e != list_end(child_list); e = list_next(e)) // 순회를 못 때려버림
-	// 	printf("리스트에 들어있는 것은: %s\n", list_entry(e, struct thread, child_elem)->name);
 
 	struct thread *child = find_child(child_tid);
 	if (child == NULL)
@@ -288,6 +281,8 @@ int process_wait(tid_t child_tid UNUSED)
 	{
 		sema_down(&child->child_sema);
 		list_remove(&child->child_elem);
+		// printf("child->dying_status: %d\n", child->dying_status);
+		return child->dying_status;
 	}
 
 	// 이미 wait 하고 있던거였다면, 안 기다리고 즉시 return -1

@@ -50,7 +50,7 @@ bool check_ptr(char *ptr);
 /* Projects 2 and later. */
 void halt(void) NO_RETURN;
 void exit(int status) NO_RETURN;
-pid_t fork(const char *thread_name);
+pid_t fork(const char *thread_name, struct intr_frame *f);
 int exec(const char *file);
 int wait(pid_t);
 bool create(const char *file, unsigned initial_size);
@@ -97,7 +97,7 @@ void syscall_handler(struct intr_frame *f)
 		exit(f->R.rdi);
 		break;
 	case SYS_FORK:
-		f->R.rax = fork(f->R.rdi);
+		f->R.rax = fork(f->R.rdi, f);
 		break;
 	case SYS_EXEC:
 		f->R.rax = exec(f->R.rdi);
@@ -153,9 +153,9 @@ void exit(int status)
 }
 
 /* THREAD_NAME이라는 이름을 가진 현재 프로세스의 복제본인 새 프로세스를 만듭니다. */
-pid_t fork(const char *thread_name)
+pid_t fork(const char *thread_name, struct intr_frame *f)
 {
-	return process_fork(thread_name, &thread_current()->tf);
+	return process_fork(thread_name, f);
 }
 
 /* 현재의 프로세스가 cmd_line에서 이름이 주어지는 실행가능한 프로세스로 변경됩니다. */
