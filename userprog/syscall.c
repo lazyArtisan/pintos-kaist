@@ -215,13 +215,13 @@ int open(const char *file)
 
 	struct file *real_file = filesys_open(file);
 
-	// file_deny_write(real_file);
-
 	// printf("열려고 했던 파일 이름: %s\n", file);
 	// printf("연 파일: %d\n", real_file);
 
-	if (real_file == -1)
+	if (real_file == -1 || real_file == NULL)
 		return -1;
+
+	file_deny_write(real_file);
 
 	// 파일 디스크립터 테이블에 해당 파일을 추가해야 함
 	int return_fd = -1;
@@ -307,7 +307,8 @@ void close(int fd)
 
 	fdt[fd] = NULL; // 테이블에서 삭제
 
-	// file_allow_write(file);
+	if (file != NULL)
+		file_allow_write(file);
 
 	file_close(file);
 }
