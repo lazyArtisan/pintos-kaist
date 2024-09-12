@@ -73,7 +73,7 @@ initd(void *f_name)
 
 	process_init();
 
-	if (process_exec(f_name) < 0)
+	if (process_exec(f_name, thread_current()->fd_idx) < 0)
 		PANIC("Fail to launch initd\n");
 	NOT_REACHED();
 }
@@ -186,17 +186,17 @@ __do_fork(void *aux)
 	 * TODO:       from the fork() until this function successfully duplicates
 	 * TODO:       the resources of parent.*/
 
-	for (int i = 0; i < FDT_COUNT_LIMIT; i++)
+	current->fdt[0] = 1;
+	current->fdt[1] = 2;
+
+	for (int i = 2; i < FDT_COUNT_LIMIT; i++)
 	{
 		struct file *file = parent->fdt[i];
 		if (file == NULL)
 			continue;
 		struct file *new_file;
-		if (file > 2)
-			new_file = file_duplicate(file);
-		else
-			new_file = file;
-		current->fdt[i] = new_file;
+		// new_file->pos = 0;
+		current->fdt[i] = file_duplicate(file);
 	}
 
 	// process_init();
@@ -217,7 +217,7 @@ error:
 
 /* Switch the current execution context to the f_name.
  * Returns -1 on fail. */
-int process_exec(void *f_name)
+int process_exec(void *f_name, int fd_idx)
 {
 	char *file_name;
 	bool success;
@@ -290,7 +290,7 @@ int process_wait(tid_t child_tid UNUSED)
 	sema_down(&child->wait_sema);
 
 	int dying_status = child->dying_status;
-	list_remove(&child->elem);
+	list_remove(&child->child_elem);
 	sema_up(&child->free_sema);
 
 	return dying_status;
@@ -441,6 +441,7 @@ load(const char *file_name, struct intr_frame *if_)
 	/* Open executable file. */
 	file = filesys_open(only_file_name);
 	// file = filesys_open(file_name);
+
 	if (file == NULL || file == -1)
 	{
 		printf("load: %s: open failed\n", only_file_name);

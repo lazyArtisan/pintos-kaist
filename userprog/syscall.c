@@ -174,12 +174,13 @@ int exec(const char *file)
 		return -1;
 	strlcpy(fn_copy, file, size);
 
-	int result = process_exec(fn_copy);
+	int result = process_exec(fn_copy, thread_current()->fd_idx);
 	// palloc_free_page(fn_copy);
 	if (result == -1)
 	{
 		exit(-1);
 	}
+
 	return result;
 }
 
@@ -214,6 +215,11 @@ int open(const char *file)
 
 	struct file *real_file = filesys_open(file);
 
+	// file_deny_write(real_file);
+
+	// printf("열려고 했던 파일 이름: %s\n", file);
+	// printf("연 파일: %d\n", real_file);
+
 	if (real_file == -1)
 		return -1;
 
@@ -223,10 +229,17 @@ int open(const char *file)
 	if (t->fdt != NULL)
 	{
 		struct file **fdt = t->fdt;
+		while (t->fdt[t->fd_idx] != 0) // exec-read 때문에 억지로 추가
+			t->fd_idx++;
 		fdt[t->fd_idx] = real_file;
 		return_fd = t->fd_idx;
 		t->fd_idx++;
 	}
+
+	// printf("추가한 파일 fd: %d\n", return_fd);
+	// printf("현재 fd_idx: %d\n", t->fd_idx);
+
+	// printf("return_fd : %d\n\n", return_fd);
 
 	return return_fd;
 }
@@ -293,6 +306,8 @@ void close(int fd)
 	struct file *file = fdt[fd]; // fd에 할당된 file 구조체
 
 	fdt[fd] = NULL; // 테이블에서 삭제
+
+	// file_allow_write(file);
 
 	file_close(file);
 }

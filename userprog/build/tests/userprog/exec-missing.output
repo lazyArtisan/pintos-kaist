@@ -16,12 +16,12 @@ Executing 'exec-missing':
 load: no-such-file: open failed
 exec-missing: exit(-1)
 Execution of 'exec-missing' complete.
-Timer: 104 ticks
-Thread: 60 idle ticks, 37 kernel ticks, 7 user ticks
+Timer: 96 ticks
+Thread: 67 idle ticks, 24 kernel ticks, 5 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 96 reads, 232 writes
 hd1:0: 102 reads, 0 writes
-Console: 879 characters output
+Console: 878 characters output
 Keyboard: 0 keys pressed
 Exception: 0 page faults
 Powering off...
