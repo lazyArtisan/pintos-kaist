@@ -12,6 +12,7 @@
 #include "lib/string.h"
 #include "filesys/filesys.h"
 #include "include/threads/vaddr.h"
+#include "filesys/file.h"
 #include "devices/input.h"
 #include "threads/palloc.h"
 
@@ -174,7 +175,7 @@ int exec(const char *file)
 		return -1;
 	strlcpy(fn_copy, file, size);
 
-	int result = process_exec(fn_copy, thread_current()->fd_idx);
+	int result = process_exec(fn_copy);
 	// palloc_free_page(fn_copy);
 	if (result == -1)
 	{
@@ -213,6 +214,8 @@ int open(const char *file)
 	if (strlen(file) == 0)
 		return -1;
 
+	printf("OPEN :: 누구를 open하려 하는가? : %s\n", file);
+
 	struct file *real_file = filesys_open(file);
 
 	// printf("열려고 했던 파일 이름: %s\n", file);
@@ -220,8 +223,6 @@ int open(const char *file)
 
 	if (real_file == -1 || real_file == NULL)
 		return -1;
-
-	file_deny_write(real_file);
 
 	// 파일 디스크립터 테이블에 해당 파일을 추가해야 함
 	int return_fd = -1;
@@ -240,6 +241,8 @@ int open(const char *file)
 	// printf("현재 fd_idx: %d\n", t->fd_idx);
 
 	// printf("return_fd : %d\n\n", return_fd);
+
+	printf("OPEN :: file's deny_write : %d\n", real_file->deny_write);
 
 	return return_fd;
 }
@@ -278,6 +281,8 @@ int write(int fd, const void *buffer, unsigned length)
 
 	struct file *file = thread_current()->fdt[fd];
 
+	printf("WRITE :: %d의 deny_write는 %d\n", file, file->deny_write);
+
 	return file_write_at(file, buffer, length, 0);
 }
 
@@ -306,9 +311,6 @@ void close(int fd)
 	struct file *file = fdt[fd]; // fd에 할당된 file 구조체
 
 	fdt[fd] = NULL; // 테이블에서 삭제
-
-	if (file != NULL)
-		file_allow_write(file);
 
 	file_close(file);
 }

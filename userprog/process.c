@@ -73,7 +73,7 @@ initd(void *f_name)
 
 	process_init();
 
-	if (process_exec(f_name, thread_current()->fd_idx) < 0)
+	if (process_exec(f_name) < 0)
 		PANIC("Fail to launch initd\n");
 	NOT_REACHED();
 }
@@ -217,7 +217,7 @@ error:
 
 /* Switch the current execution context to the f_name.
  * Returns -1 on fail. */
-int process_exec(void *f_name, int fd_idx)
+int process_exec(void *f_name)
 {
 	char *file_name;
 	bool success;
@@ -439,6 +439,7 @@ load(const char *file_name, struct intr_frame *if_)
 	process_activate(thread_current());
 
 	/* Open executable file. */
+	printf("LOAD :: filesys_open : file: %s\n", only_file_name);
 	file = filesys_open(only_file_name);
 	// file = filesys_open(file_name);
 
@@ -591,6 +592,11 @@ load(const char *file_name, struct intr_frame *if_)
 	// strlcpy(dst, 0, 8);
 
 	success = true;
+
+	thread_current()->exec_file = file; // 실행하는 파일을 저장
+
+	// file_deny_write(file);
+	// printf("LOAD :: FILE_DENY_WRITE : %s의 deny_write가 %d으로 변했다\n", only_file_name, file->deny_write);
 
 done:
 	/* We arrive here whether the load is successful or not. */

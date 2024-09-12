@@ -114,6 +114,8 @@ struct thread
 	struct semaphore free_sema;
 	struct semaphore wait_sema;
 
+	struct file *exec_file; /* deny_write를 먹이기 위해 실행 파일 저장 */
+
 	// #ifdef USERPROG
 	/* Owned by userprog/process.c. */
 	uint64_t *pml4; /* Page map level 4 */
