@@ -17,9 +17,8 @@
 #include "threads/palloc.h"
 #include "threads/vaddr.h"
 
-
-void syscall_entry (void);
-void syscall_handler (struct intr_frame *);
+void syscall_entry(void);
+void syscall_handler(struct intr_frame *);
 
 /* System call.
  *
@@ -34,155 +33,180 @@ void syscall_handler (struct intr_frame *);
 #define MSR_LSTAR 0xc0000082        /* Long mode SYSCALL target */
 #define MSR_SYSCALL_MASK 0xc0000084 /* Mask for the eflags */
 
-void check_address(void *addr) {
+// void check_address(void *addr)
+// {
+//     struct thread *cur = thread_current();
+//     if (addr == NULL || !(is_user_vaddr(addr)))
+//     {
+//         exit(-1);
+//     }
+// }
+void check_address(void *addr)
+{
     struct thread *cur = thread_current();
-	if (addr == NULL || !(is_user_vaddr(addr)) || pml4_get_page(cur->pml4, addr) == NULL) {
-		exit(-1);
-	}
-}
-
-void
-syscall_init (void) {
-	write_msr(MSR_STAR, ((uint64_t)SEL_UCSEG - 0x10) << 48  |
-			((uint64_t)SEL_KCSEG) << 32);
-	write_msr(MSR_LSTAR, (uint64_t) syscall_entry);
-
-	/* The interrupt service rountine should not serve any interrupts
-	 * until the syscall_entry swaps the userland stack to the kernel
-	 * mode stack. Therefore, we masked the FLAG_FL. */
-	write_msr(MSR_SYSCALL_MASK,
-			FLAG_IF | FLAG_TF | FLAG_DF | FLAG_IOPL | FLAG_AC | FLAG_NT);
-	lock_init(&filesys_lock);
-}
-
-/* The main system call interface */
-void
-syscall_handler (struct intr_frame *f UNUSED) {
-	// TODO: Your implementation goes here.
-
-	switch (f->R.rax)
+    if (addr == NULL || addr > (uint64_t)USER_STACK)
     {
-        case SYS_HALT:
-            halt();
-            break;
-        case SYS_EXIT:
-            exit(f->R.rdi);
-            break;
-        case SYS_FORK:
-            f->R.rax = fork(f->R.rdi, f);
-            break;
-        case SYS_EXEC:
-            if (exec(f->R.rdi) == -1)
-            {
-                exit(-1);
-            }
-            break;
-        case SYS_WAIT:
-            f->R.rax = wait(f->R.rdi);
-            break;
-        case SYS_CREATE:
-            f->R.rax = create(f->R.rdi, f->R.rsi);
-            break;
-        case SYS_REMOVE:
-            f->R.rax = remove(f->R.rdi);
-            break;
-        case SYS_OPEN:
-            f->R.rax = open(f->R.rdi);
-            break;
-        case SYS_FILESIZE:
-            f->R.rax = filesize(f->R.rdi);
-            break;
-        case SYS_READ:
-            f->R.rax = read(f->R.rdi, f->R.rsi, f->R.rdx);
-            break;
-        case SYS_WRITE:
-            f->R.rax = write(f->R.rdi, f->R.rsi, f->R.rdx);
-            break;
-        case SYS_SEEK:
-            seek(f->R.rdi, f->R.rsi);
-            break;
-        case SYS_TELL:
-            f->R.rax = tell(f->R.rdi);
-            break;
-        case SYS_CLOSE:
-            close(f->R.rdi);
-            break;
-        default:
-            thread_exit();
-            break;
+        exit(-1);
     }
 }
 
-void halt(void){
-	power_off();
+void syscall_init(void)
+{
+    write_msr(MSR_STAR, ((uint64_t)SEL_UCSEG - 0x10) << 48 |
+                            ((uint64_t)SEL_KCSEG) << 32);
+    write_msr(MSR_LSTAR, (uint64_t)syscall_entry);
+
+    /* The interrupt service rountine should not serve any interrupts
+     * until the syscall_entry swaps the userland stack to the kernel
+     * mode stack. Therefore, we masked the FLAG_FL. */
+    write_msr(MSR_SYSCALL_MASK,
+              FLAG_IF | FLAG_TF | FLAG_DF | FLAG_IOPL | FLAG_AC | FLAG_NT);
+    lock_init(&filesys_lock);
 }
 
-void exit(int status){
-	struct thread *cur = thread_current();
+/* The main system call interface */
+void syscall_handler(struct intr_frame *f UNUSED)
+{
+    // TODO: Your implementation goes here.
+
+    switch (f->R.rax)
+    {
+    case SYS_HALT:
+        halt();
+        break;
+    case SYS_EXIT:
+        exit(f->R.rdi);
+        break;
+    case SYS_FORK:
+        f->R.rax = fork(f->R.rdi, f);
+        break;
+    case SYS_EXEC:
+        if (exec(f->R.rdi) == -1)
+        {
+            exit(-1);
+        }
+        break;
+    case SYS_WAIT:
+        f->R.rax = wait(f->R.rdi);
+        break;
+    case SYS_CREATE:
+        f->R.rax = create(f->R.rdi, f->R.rsi);
+        break;
+    case SYS_REMOVE:
+        f->R.rax = remove(f->R.rdi);
+        break;
+    case SYS_OPEN:
+        f->R.rax = open(f->R.rdi);
+        break;
+    case SYS_FILESIZE:
+        f->R.rax = filesize(f->R.rdi);
+        break;
+    case SYS_READ:
+        f->R.rax = read(f->R.rdi, f->R.rsi, f->R.rdx);
+        break;
+    case SYS_WRITE:
+        f->R.rax = write(f->R.rdi, f->R.rsi, f->R.rdx);
+        break;
+    case SYS_SEEK:
+        seek(f->R.rdi, f->R.rsi);
+        break;
+    case SYS_TELL:
+        f->R.rax = tell(f->R.rdi);
+        break;
+    case SYS_CLOSE:
+        close(f->R.rdi);
+        break;
+    default:
+        thread_exit();
+        break;
+    }
+}
+
+void halt(void)
+{
+    power_off();
+}
+
+void exit(int status)
+{
+    struct thread *cur = thread_current();
     cur->exit_status = status;
-	printf("%s: exit(%d)\n", cur->name, status);
-	thread_exit();
+    printf("%s: exit(%d)\n", cur->name, status);
+    thread_exit();
 }
 
-tid_t fork(const char *thread_name, struct intr_frame *f){
-	return process_fork(thread_name, f);
+tid_t fork(const char *thread_name, struct intr_frame *f)
+{
+    return process_fork(thread_name, f);
 }
 
+int exec(const char *cmd_line)
+{
+    check_address(cmd_line);
 
-int exec(const char *cmd_line){
-	check_address(cmd_line);
+    int file_name_size = strlen(cmd_line) + 1;
 
-	int file_name_size = strlen(cmd_line)+1;
+    char *fn_copy = palloc_get_page(PAL_ZERO);
+    if (fn_copy == NULL)
+    {
+        exit(-1);
+    }
 
-	char *fn_copy = palloc_get_page(PAL_ZERO);
-	if (fn_copy == NULL) exit(-1);
-	strlcpy(fn_copy, cmd_line, file_name_size);
+    strlcpy(fn_copy, cmd_line, file_name_size);
 
-	if (process_exec(fn_copy) == -1) return -1;
+    if (process_exec(fn_copy) == -1)
+        return -1;
 
-	NOT_REACHED();
-	return 0;
+    NOT_REACHED();
+    return 0;
 }
 
-int wait(pid_t pid){
-	return process_wait(pid);
+int wait(pid_t pid)
+{
+    return process_wait(pid);
 }
 
-bool create(const char *file, unsigned initial_size) {
-	check_address(file);
+bool create(const char *file, unsigned initial_size)
+{
+    check_address(file);
 
-	//printf("SYSCALL:: CREATE :LOCK ACQUIRE\n");
+    // printf("SYSCALL:: CREATE :LOCK ACQUIRE\n");
     lock_acquire(&filesys_lock);
 
-	 if (filesys_create(file, initial_size)) {
-        //printf("SYSCALL:: CREATE : LOCK_RELEASE\n");
+    if (filesys_create(file, initial_size))
+    {
+        // printf("SYSCALL:: CREATE : LOCK_RELEASE\n");
         lock_release(&filesys_lock);
 
         return true;
-    } 
-	
-	else {
-        //printf("SYSCALL:: CREATE : LOCK_RELEASE\n");
+    }
+
+    else
+    {
+        // printf("SYSCALL:: CREATE : LOCK_RELEASE\n");
         lock_release(&filesys_lock);
 
         return false;
     }
 }
 
-bool remove(const char *file) {
-	check_address(file);
+bool remove(const char *file)
+{
+    check_address(file);
 
-	//printf("SYSCALL:: REMOVE :LOCK ACQUIRE\n");
+    // printf("SYSCALL:: REMOVE :LOCK ACQUIRE\n");
     lock_acquire(&filesys_lock);
 
-   
-    if (filesys_remove(file)) {
-        //printf("SYSCALL:: REMOVE : LOCK_RELEASE\n");
+    if (filesys_remove(file))
+    {
+        // printf("SYSCALL:: REMOVE : LOCK_RELEASE\n");
         lock_release(&filesys_lock);
 
         return true;
-    } else {
-        //printf("SYSCALL:: REMOVE : LOCK_RELEASE\n");
+    }
+    else
+    {
+        // printf("SYSCALL:: REMOVE : LOCK_RELEASE\n");
         lock_release(&filesys_lock);
 
         return false;
@@ -219,45 +243,48 @@ static struct file *find_file_by_fd(int fd)
     return cur->fd_table[fd];
 }
 
-int open(const char *file) {
-	check_address(file);
+int open(const char *file)
+{
+    check_address(file);
 
-    
-    
-	//printf("SYSCALL:: OPEN : LOCK ACQUIRE\n");
+    // printf("SYSCALL:: OPEN : LOCK ACQUIRE\n");
     lock_acquire(&filesys_lock);
 
-    //printf("SYSCALL:: OPEN : current file char : %s\n", file);
+    // printf("SYSCALL:: OPEN : current file char : %s\n", file);
 
     struct file *open_file = filesys_open(file);
 
-    //printf("SYSCALL::OPEN:%p\n", open_file);
+    // printf("SYSCALL::OPEN:%p\n", open_file);
 
-    if (open_file == NULL) {
-        //printf("SYSCALL:: OPEN : LOCK_RELEASE BY OPEN_FILE == NULL\n");
+    if (open_file == NULL)
+    {
+        // printf("SYSCALL:: OPEN : LOCK_RELEASE BY OPEN_FILE == NULL\n");
         lock_release(&filesys_lock);
         return -1;
     }
 
     // fd table에 file추가
     int fd = add_file_to_fdt(open_file);
-   
+
     // fd table 가득 찼을경우
-    if (fd == -1) {
+    if (fd == -1)
+    {
         file_close(open_file);
     }
-    //printf("SYSCALL:: OPEN : LOCK_RELEASE\n");
+    // printf("SYSCALL:: OPEN : LOCK_RELEASE\n");
     lock_release(&filesys_lock);
 
     return fd;
 }
 
-void remove_file_from_fdt(int fd) {
+void remove_file_from_fdt(int fd)
+{
     struct thread *cur = thread_current();
 
     // error : invalid fd
-    if (fd < 0 || fd >= FDT_COUNT_LIMIT){
-        //printf("SYSCALL::REMV_FI_FROM_FDT:INVALID FD\n");
+    if (fd < 0 || fd >= FDT_COUNT_LIMIT)
+    {
+        // printf("SYSCALL::REMV_FI_FROM_FDT:INVALID FD\n");
         return;
     }
 
@@ -272,13 +299,12 @@ int filesize(int fd)
         return -1;
     }
 
-    //printf("SYSCALL:: FILESIZE :LOCK ACQUIRE\n");
+    // printf("SYSCALL:: FILESIZE :LOCK ACQUIRE\n");
     lock_acquire(&filesys_lock);
 
     int fileLength = file_length(open_file);
-    //printf("SYSCALL:: FILESIZE : LOCK_RELEASE\n");
+    // printf("SYSCALL:: FILESIZE : LOCK_RELEASE\n");
     lock_release(&filesys_lock);
-
 
     return fileLength;
 }
@@ -288,9 +314,10 @@ int read(int fd, void *buffer, unsigned size)
     check_address(buffer);
 
     if (fd < 0 || fd > FDT_COUNT_LIMIT)
+    {
         exit(-1);
-    
-   
+    }
+
     // 읽은 바이트 수 저장할 변수
     off_t read_byte;
     // 버퍼를 바이트 단위로 접근하기 위한 포인터
@@ -322,18 +349,18 @@ int read(int fd, void *buffer, unsigned size)
     else
     {
         struct file *read_file = find_file_by_fd(fd);
-        
+
         if (read_file == NULL)
         {
             return -1;
         }
 
-        //if (size == 0) return 0;
+        // if (size == 0) return 0;
 
         lock_acquire(&filesys_lock);
 
         read_byte = file_read(read_file, buffer, size);
-        //file_deny_write(read_file);
+        // file_deny_write(read_file);
         lock_release(&filesys_lock);
     }
 
@@ -341,64 +368,76 @@ int read(int fd, void *buffer, unsigned size)
     return read_byte;
 }
 
-int write(int fd, const void *buffer, unsigned size) {
+int write(int fd, const void *buffer, unsigned size)
+{
     check_address(buffer);
 
-	int write_result;
-	lock_acquire(&filesys_lock);
-	if (fd == 1) {
-		putbuf(buffer, size);		// 문자열을 화면에 출력하는 함수
-		write_result = size;
-	}
-    else if (fd == 0) {
+    int write_result;
+    lock_acquire(&filesys_lock);
+    if (fd == 1)
+    {
+        putbuf(buffer, size); // 문자열을 화면에 출력하는 함수
+        write_result = size;
+    }
+    else if (fd == 0)
+    {
         lock_release(&filesys_lock);
         exit(-1);
         return -1;
     }
-	else {
-		if (find_file_by_fd(fd) != NULL) {
-			write_result = file_write(find_file_by_fd(fd), buffer, size);
-		}
-		else {
-			write_result = -1;
-		}
-	}
-	lock_release(&filesys_lock);
-	return write_result;
+    else
+    {
+        if (find_file_by_fd(fd) != NULL)
+        {
+            write_result = file_write(find_file_by_fd(fd), buffer, size);
+        }
+        else
+        {
+            write_result = -1;
+        }
+    }
+    lock_release(&filesys_lock);
+    return write_result;
 }
 
-
-
-void seek(int fd, unsigned position) {
-    //printf("SYSCALL::SEEK:INIT\n");
-    if (fd < 2) {
-        //printf("SYSCALL::SEEK:FD INVALID\n");
+void seek(int fd, unsigned position)
+{
+    // printf("SYSCALL::SEEK:INIT\n");
+    if (fd < 2)
+    {
+        // printf("SYSCALL::SEEK:FD INVALID\n");
         return;
     }
     struct file *file = find_file_by_fd(fd);
-    //printf("SYSCALL::SEEK: fild addr : %p\n", file);
-    //check_address(file);
-    if (file == NULL) {
+    // printf("SYSCALL::SEEK: fild addr : %p\n", file);
+    // check_address(file);
+    if (file == NULL)
+    {
         return;
     }
     file_seek(file, position);
 }
 
-unsigned tell (int fd) {
-    if (fd < 2) {
+unsigned tell(int fd)
+{
+    if (fd < 2)
+    {
         return;
     }
     struct file *file = find_file_by_fd(fd);
     check_address(file);
-    if (file == NULL) {
+    if (file == NULL)
+    {
         return;
     }
     return file_tell(file);
 }
 
-void close(int fd){
+void close(int fd)
+{
     struct file *fileobj = find_file_by_fd(fd);
-	if (fileobj == NULL) return;
-	
-	remove_file_from_fdt(fd);
+    if (fileobj == NULL)
+        return;
+
+    remove_file_from_fdt(fd);
 }
