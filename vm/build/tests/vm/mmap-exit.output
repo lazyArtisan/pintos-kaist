@@ -35,8 +35,8 @@ Executing 'mmap-exit':
 (mmap-exit) 512 bytes read starting at offset 0 in "sample.txt" differ from expected: FAILED
 mmap-exit: exit(1)
 Execution of 'mmap-exit' complete.
-Timer: 66 ticks
-Thread: 38 idle ticks, 27 kernel ticks, 1 user ticks
+Timer: 67 ticks
+Thread: 36 idle ticks, 26 kernel ticks, 5 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 197 reads, 472 writes
 hd1:0: 210 reads, 0 writes

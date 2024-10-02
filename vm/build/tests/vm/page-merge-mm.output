@@ -18,10 +18,8 @@ Executing 'page-merge-mm':
 (page-merge-mm) init
 (page-merge-mm) sort chunk 0
 (page-merge-mm) sort chunk 1
-load: child-qsort-mm: open failed
 child-qsort-mm: exit(-1)
 (page-merge-mm) sort chunk 2
-load: child-qsort-mm: open failed
 child-qsort-mm: exit(-1)
 (page-merge-mm) sort chunk 3
 load: child-qsort-mm: open failed
@@ -30,17 +28,19 @@ child-qsort-mm: exit(-1)
 load: child-qsort-mm: open failed
 child-qsort-mm: exit(-1)
 (page-merge-mm) sort chunk 5
+load: child-qsort-mm: open failed
 child-qsort-mm: exit(-1)
 (page-merge-mm) sort chunk 6
 child-qsort-mm: exit(-1)
 (page-merge-mm) sort chunk 7
+load: child-qsort-mm: open failed
 child-qsort-mm: exit(-1)
 (page-merge-mm) wait for child 0
 (page-merge-mm) wait for child 0: FAILED
 page-merge-mm: exit(1)
 Execution of 'page-merge-mm' complete.
-Timer: 140 ticks
-Thread: 74 idle ticks, 29 kernel ticks, 37 user ticks
+Timer: 132 ticks
+Thread: 72 idle ticks, 30 kernel ticks, 30 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 488 reads, 4678 writes
 hd1:0: 224 reads, 0 writes

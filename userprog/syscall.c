@@ -16,6 +16,7 @@
 #include "userprog/process.h"
 #include "threads/palloc.h"
 #include "threads/vaddr.h"
+#include "vm/vm.h"
 
 void syscall_entry(void);
 void syscall_handler(struct intr_frame *);
@@ -102,6 +103,11 @@ void syscall_handler(struct intr_frame *f UNUSED)
         f->R.rax = filesize(f->R.rdi);
         break;
     case SYS_READ:
+        if (pml4_get_page(thread_current()->pml4, f->R.rsi) && !spt_find_page(&thread_current()->spt, f->R.rsi)->writable)
+        {
+            f->R.rax = -1;
+            exit(-1);
+        }
         f->R.rax = read(f->R.rdi, f->R.rsi, f->R.rdx);
         break;
     case SYS_WRITE:
