@@ -1,10 +1,11 @@
 /* file.c: Implementation of memory backed file object (mmaped object). */
 
 #include "vm/vm.h"
+#include "include/threads/vaddr.h"
 
-static bool file_backed_swap_in (struct page *page, void *kva);
-static bool file_backed_swap_out (struct page *page);
-static void file_backed_destroy (struct page *page);
+static bool file_backed_swap_in(struct page *page, void *kva);
+static bool file_backed_swap_out(struct page *page);
+static void file_backed_destroy(struct page *page);
 
 /* DO NOT MODIFY this struct */
 static const struct page_operations file_ops = {
@@ -15,13 +16,13 @@ static const struct page_operations file_ops = {
 };
 
 /* The initializer of file vm */
-void
-vm_file_init (void) {
+void vm_file_init(void)
+{
 }
 
 /* Initialize the file backed page */
-bool
-file_backed_initializer (struct page *page, enum vm_type type, void *kva) {
+bool file_backed_initializer(struct page *page, enum vm_type type, void *kva)
+{
 	/* Set up the handler */
 	page->operations = &file_ops;
 
@@ -30,29 +31,37 @@ file_backed_initializer (struct page *page, enum vm_type type, void *kva) {
 
 /* Swap in the page by read contents from the file. */
 static bool
-file_backed_swap_in (struct page *page, void *kva) {
+file_backed_swap_in(struct page *page, void *kva)
+{
 	struct file_page *file_page UNUSED = &page->file;
 }
 
 /* Swap out the page by writeback contents to the file. */
 static bool
-file_backed_swap_out (struct page *page) {
+file_backed_swap_out(struct page *page)
+{
 	struct file_page *file_page UNUSED = &page->file;
 }
 
 /* Destory the file backed page. PAGE will be freed by the caller. */
 static void
-file_backed_destroy (struct page *page) {
+file_backed_destroy(struct page *page)
+{
 	struct file_page *file_page UNUSED = &page->file;
 }
 
 /* Do the mmap */
 void *
-do_mmap (void *addr, size_t length, int writable,
-		struct file *file, off_t offset) {
+do_mmap(void *addr, size_t length, int writable,
+		struct file *file, off_t offset)
+{
+	if (file_length(file) == 0)
+		return NULL;
+	if ((uintptr_t)addr % (1 << 12) == 0)
+		return NULL;
 }
 
 /* Do the munmap */
-void
-do_munmap (void *addr) {
+void do_munmap(void *addr)
+{
 }
