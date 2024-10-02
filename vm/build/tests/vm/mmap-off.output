@@ -18,8 +18,8 @@ Executing 'mmap-off':
 (mmap-off) open "large.txt"
 (mmap-off) try to mmap with offset 0x1000
 Execution of 'mmap-off' complete.
-Timer: 233 ticks
-Thread: 208 idle ticks, 26 kernel ticks, 0 user ticks
+Timer: 219 ticks
+Thread: 195 idle ticks, 24 kernel ticks, 0 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 112 reads, 15904 writes
 hd1:0: 7933 reads, 0 writes

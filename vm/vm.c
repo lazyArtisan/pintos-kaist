@@ -52,7 +52,7 @@ bool vm_alloc_page_with_initializer(enum vm_type type, void *upage, bool writabl
 
 	struct supplemental_page_table *spt = &thread_current()->spt;
 	// printf("\nalloc addr: %p\n", upage);
-
+	// printf("alloc_page va: %p\n", upage);
 	/* Check wheter the upage is already occupied or not. */
 	if (spt_find_page(spt, upage) == NULL)
 	{
@@ -188,6 +188,10 @@ bool vm_try_handle_fault(struct intr_frame *f UNUSED, void *addr UNUSED,
 {
 	struct supplemental_page_table *spt UNUSED = &thread_current()->spt;
 	struct page *page = NULL;
+	uintptr_t rsp = f->rsp;
+
+	if (!user)
+		rsp = thread_current()->rsp;
 
 	if (addr == NULL)
 		return false;
@@ -197,9 +201,9 @@ bool vm_try_handle_fault(struct intr_frame *f UNUSED, void *addr UNUSED,
 
 	if (not_present) // 접근한 메모리의 physical page가 존재하지 않은 경우
 	{
-		if ((USER_STACK - (1 << 20) < f->rsp) && addr == f->rsp - 8)
+		if ((USER_STACK - (1 << 20) <= rsp - 8) && addr == rsp - 8 && addr <= USER_STACK)
 			vm_stack_growth(addr);
-		else if ((USER_STACK - (1 << 20) < f->rsp) && addr >= f->rsp)
+		else if ((USER_STACK - (1 << 20) <= rsp) && addr >= rsp && addr <= USER_STACK)
 			vm_stack_growth(addr);
 
 		/* TODO: Validate the fault */

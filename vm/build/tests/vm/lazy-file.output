@@ -21,8 +21,8 @@ Executing 'lazy-file':
 (lazy-file) page aligned size of small: 12288
 (lazy-file) mmap "small.txt"
 Execution of 'lazy-file' complete.
-Timer: 63 ticks
-Thread: 39 idle ticks, 24 kernel ticks, 0 user ticks
+Timer: 61 ticks
+Thread: 37 idle ticks, 23 kernel ticks, 1 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 147 reads, 350 writes
 hd1:0: 151 reads, 0 writes

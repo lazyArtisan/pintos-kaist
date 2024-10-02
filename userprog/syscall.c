@@ -69,7 +69,7 @@ void syscall_init(void)
 void syscall_handler(struct intr_frame *f UNUSED)
 {
     // TODO: Your implementation goes here.
-
+    thread_current()->rsp = f->rsp;
     switch (f->R.rax)
     {
     case SYS_HALT:
@@ -103,7 +103,7 @@ void syscall_handler(struct intr_frame *f UNUSED)
         f->R.rax = filesize(f->R.rdi);
         break;
     case SYS_READ:
-        if (pml4_get_page(thread_current()->pml4, f->R.rsi) && !spt_find_page(&thread_current()->spt, f->R.rsi)->writable)
+        if (pml4_get_page(thread_current()->pml4, f->R.rsi) && !(spt_find_page(&thread_current()->spt, f->R.rsi)->writable))
         {
             f->R.rax = -1;
             exit(-1);
@@ -317,6 +317,10 @@ int filesize(int fd)
 
 int read(int fd, void *buffer, unsigned size)
 {
+    // printf("fd: %d\n", fd);
+    // printf("buffer: %p\n", buffer);
+    // printf("size: %d\n", size);
+
     check_address(buffer);
 
     if (fd < 0 || fd > FDT_COUNT_LIMIT)
@@ -365,8 +369,11 @@ int read(int fd, void *buffer, unsigned size)
 
         lock_acquire(&filesys_lock);
 
+        // printf("read_file: %p\n", read_file);
+
         read_byte = file_read(read_file, buffer, size);
         // file_deny_write(read_file);
+
         lock_release(&filesys_lock);
     }
 
